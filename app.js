@@ -11,15 +11,15 @@ var BAL={'6:3':60,'6:4':100,'7:3':12,'7:4':50,'8:3':0,'8:4':4};
 var DX=[1,-1,0,0],DY=[0,0,1,-1];
 var store={get:function(k,d){try{var v=localStorage.getItem('orlo.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
   set:function(k,v){try{localStorage.setItem('orlo.'+k,JSON.stringify(v));}catch(e){}}};
-var cfg=Object.assign({level:'mid',color:2,size:7,reds:4,theme:'safran'},store.get('settings',{}));
+var cfg=Object.assign({level:'mid',color:2,size:7,reds:4,theme:'sable'},store.get('settings',{}));
+if(!OrloArt.THEMES[cfg.theme])cfg.theme='sable';
 OrloArt.setTheme(cfg.theme);
 function saveCfg(){store.set('settings',cfg);}
 
 /* images des pierres pour le DOM, dessinées par le même code que le plateau */
 var rs=document.documentElement.style;
-function artVars(){[1,2,3].forEach(function(c){rs.setProperty('--st'+c,'url('+OrloArt.url(c,96)+')');});
-  rs.setProperty('--cloth','url('+OrloArt.clothTile()+')');}
-artVars();rs.setProperty('--wood','url('+OrloArt.woodTile()+')');
+function artVars(){[1,2,3].forEach(function(c){rs.setProperty('--st'+c,'url('+OrloArt.url(c,96)+')');});}
+artVars();
 
 function stones(c,n){var s='';for(var i=0;i<n;i++)s+='<i class="st c'+c+'"></i>';return s;}
 function plural(n,w){return n+' '+w+(n>1?'s':'');}
@@ -259,7 +259,7 @@ function endGame(){
   $('endTitle').textContent=w===HC?'Victoire':w===3?'Égalité':'Défaite';
   card.classList.toggle('lose',w!==HC&&w!==3);
   $('endScore').innerHTML='<i class="st c'+HC+'"></i>'+G.cur.lost[AI]+'<small>contre</small>'+G.cur.lost[HC]+'<i class="st c'+AI+'"></i>';
-  $('endLine').textContent=fr(w===HC?'Belle partie, bien poussée.':w===3?'Personne n’a cédé un pouce de tissu.':'Le tissu a parlé. Revanche ?');
+  $('endLine').textContent=fr(w===HC?'Belle partie, bien poussée.':w===3?'Personne n’a cédé un pouce.':'Revanche ?');
   setTimeout(function(){if(G.cur.winner&&current==='game')card.hidden=false;},RM.matches?200:1300);
 }
 $('eAgain').onclick=function(){newGame();};
@@ -300,7 +300,7 @@ function renderSettings(){
   opts('sColor',[[2,'<i class="st c2"></i>Blanc <small>· 2e</small>'],[1,'<i class="st c1"></i>Noir <small>· 1er</small>']],'color',true);
   opts('sSize',[5,6,7,8,9].map(function(n){return[n,n+'×'+n];}),'size',true);
   opts('sReds',[0,1,2,3,4,5,6,7,8].map(function(n){return[n,String(n)];}),'reds',true);
-  opts('sTheme',[['safran','<i class="sw sw-safran"></i>Safran'],['lin','<i class="sw sw-lin"></i>Lin'],['olive','<i class="sw sw-olive"></i>Olive']],'theme');
+  opts('sTheme',[['sable','<i class="sw sw-sable"></i>Sable'],['ivoire','<i class="sw sw-ivoire"></i>Ivoire'],['graphite','<i class="sw sw-graphite"></i>Graphite']],'theme');
   var b=BAL[cfg.size+':'+cfg.reds],box=$('sBal');
   if(b==null){box.innerHTML='<p class="bal-txt" style="margin:0">Combinaison pas encore testée en simulation. Équilibrées : <b>7×7 · 4 rouges</b> ou <b>6×6 · 3 rouges</b>.</p>';}
   else{var verdict=b>=40&&b<=62?'<b>équilibré</b>':b>62?'Noir (1er) <b>très avantagé</b>':'Blanc (2e) <b>très avantagé</b>';
@@ -317,11 +317,11 @@ $('sApply').onclick=function(){closeSheets();if(current!=='game')go('game');newG
 /* ================= tutoriel ================= */
 var tb=new OrloBoard(document.querySelector('#tuto canvas'),{n:5});
 var LESSONS=[
-  {t:'Poser une pierre',x:'Pose ta pierre blanche sur le cercle doré, juste à gauche de la noire.<br><em>Premier toucher : l’aperçu. Second toucher : tu joues.</em>',
+  {t:'Poser une pierre',x:'Pose ta pierre blanche sur le cercle, juste à gauche de la noire.<br><em>Premier toucher : l’aperçu. Second toucher : tu joues.</em>',
    cells:{12:1},target:[11],ok:'Ta pierre a poussé la noire d’un cran. C’est toute la règle : <b>ta pierre pousse tout ce qui la touche.</b>'},
   {t:'Dans les quatre directions',x:'Pose ta pierre au centre de la croix. Regarde l’aperçu : les flèches montrent qui bouge.',
    cells:{7:1,11:1,13:1,17:1},target:[12],ok:'Les quatre reculent d’un seul coup : la poussée part dans les quatre directions à la fois.'},
-  {t:'Le bord du tissu',x:'Une pierre poussée hors du tissu est <b>sortie</b>. Pousse la noire par-dessus l’ourlet.',
+  {t:'Le bord du plateau',x:'Une pierre poussée hors du plateau est <b>sortie</b>. Pousse la noire par-dessus le bord.',
    cells:{14:1},target:[13],ok:'Sortie ! Elle rejoint ta réserve, en bas. Sors-en <b>5</b> pour gagner.'},
   {t:'Les files',x:'Des pierres collées forment une file, poussée en entier quelle que soit la couleur. Pousse celle-ci.',
    cells:{12:1,13:2,14:1},target:[11],ok:'Toute la file avance et la noire du bout tombe. Attention : tes propres pierres peuvent tomber aussi, et elles comptent pour l’adversaire.'},
@@ -375,7 +375,7 @@ function tPlay(p){
         var a=tb.playMove(tr2,L.reply,1);tb.flashBlocked(bl);return a;}).then(function(){return tb.wait(250);}).then(function(){success(i0);});
     }
     if(L.free&&!T.s.winner){T.fails++;
-      $('lText').innerHTML=fr(T.fails>=2?'Presque. Regarde le cercle doré : il est entre les deux paires.':'Pas tout à fait : ce coup n’en sort pas deux. On recommence.');
+      $('lText').innerHTML=fr(T.fails>=2?'Presque. Regarde le cercle : il est entre les deux paires.':'Pas tout à fait : ce coup n’en sort pas deux. On recommence.');
       tNudge();return tb.wait(1500).then(function(){if(T.i===i0&&current==='tuto')loadLesson(i0);});}
     success(i0);
   });

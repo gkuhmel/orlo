@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#21140c">
+<meta name="theme-color" content="#121110">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Orlo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..800,0..100;1,9..144,400..700,0..100&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,13 +18,13 @@
 <section id="splash" class="screen active" aria-label="Orlo">
   <div class="sp-center">
     <div class="sp-strip" aria-hidden="true">
-      <span class="sp-thread"></span>
+      <span class="sp-line"></span>
       <i class="st c1 sp-s sp-b1"></i><i class="st c2 sp-s sp-b2"></i><i class="st c1 sp-s sp-b3"></i><i class="st c2 sp-s sp-drop"></i>
       <span class="sp-ring"></span>
     </div>
     <h1 class="logo" aria-label="Orlo"><span>O</span><span>r</span><span>l</span><span>o</span></h1>
     <div class="orn"><i></i></div>
-    <p class="tagline">Pousse-les jusqu'au bord du tissu.</p>
+    <p class="tagline">Pousse-les hors du plateau.</p>
   </div>
   <p class="sp-tap">Touche pour entrer</p>
 </section>
@@ -35,7 +35,7 @@
     <header class="home-head">
       <h1 class="logo sm" aria-label="Orlo"><span>O</span><span>r</span><span>l</span><span>o</span></h1>
       <div class="orn"><i></i></div>
-      <p class="tagline">Pousse-les jusqu'au bord du tissu.</p>
+      <p class="tagline">Pousse-les hors du plateau.</p>
     </header>
     <div class="demo" aria-hidden="true"><div class="boardbox"><canvas></canvas></div></div>
     <nav class="home-nav">
@@ -120,10 +120,10 @@
   <h2 id="setTitle">Réglages</h2>
   <div class="field"><span class="flabel">Adversaire</span><div class="opts" id="sLevel"></div></div>
   <div class="field"><span class="flabel">Tu joues</span><div class="opts" id="sColor"></div></div>
-  <div class="field"><span class="flabel">Taille du tissu</span><div class="opts" id="sSize"></div></div>
+  <div class="field"><span class="flabel">Taille</span><div class="opts" id="sSize"></div></div>
   <div class="field"><span class="flabel">Pierres rouges par joueur</span><div class="opts" id="sReds"></div></div>
   <div class="balance" id="sBal"></div>
-  <div class="field"><span class="flabel">Teinture du tissu</span><div class="opts" id="sTheme"></div></div>
+  <div class="field"><span class="flabel">Plateau</span><div class="opts" id="sTheme"></div></div>
   <p class="note" id="sNote"></p>
   <div class="sheet-actions">
     <button class="btn ghost" data-close>Fermer</button>
@@ -137,10 +137,10 @@
   <ol class="rules">
     <li><span class="rn">1</span><p>Noir commence. À ton tour, pose une pierre sur un croisement vide.</p></li>
     <li><span class="rn">2</span><p>Elle <b>pousse d'un cran</b> tout ce qui la touche, dans les 4 directions. Une file de pierres collées est poussée en entier, quelle que soit sa couleur, les tiennes comprises.</p></li>
-    <li><span class="rn">3</span><p>Une pierre poussée hors du tissu est <b>sortie</b>. Sors <b>5 pierres</b> adverses pour gagner. Les tiennes que tu sors toi-même comptent pour l'adversaire.</p></li>
+    <li><span class="rn">3</span><p>Une pierre poussée hors du plateau est <b>sortie</b>. Sors <b>5 pierres</b> adverses pour gagner. Les tiennes que tu sors toi-même comptent pour l'adversaire.</p></li>
     <li><span class="rn">4</span><p><i class="st c3"></i> Chacun a quelques <b class="r">pierres rouges</b>. Elles ne poussent pas, ne bougent jamais et bloquent toute file qui les contient. En poser une coûte ton tour.</p></li>
   </ol>
-  <p class="note">Après 120 coups, ou si le tissu est plein, celui qui a perdu le moins de pierres gagne.</p>
+  <p class="note">Après 120 coups, ou si le plateau est plein, celui qui a perdu le moins de pierres gagne.</p>
   <div class="sheet-actions">
     <button class="btn ghost" id="rTuto">Revoir le tutoriel</button>
     <button class="btn primary" data-close>Compris</button>

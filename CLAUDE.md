@@ -5,8 +5,8 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 ## Fichiers
 
 - `index.html` : structure des écrans (ouverture, accueil, partie, tutoriel) et des feuilles (réglages, règles). Pas de build.
-- `style.css` : toute la direction visuelle de l'interface (cartes cousues, boutons, feuilles, animations CSS du splash).
-- `render.js` : rendu Canvas 2D. `OrloArt` dessine pierres et textures (aussi exportées en images CSS `--st1..3`, `--cloth`, `--wood`) ; `OrloBoard` = un plateau animé (tissu tissé précalculé par taille, pierres en sprites, ombres, ondes, particules, aperçu, cibles, célébration).
+- `style.css` : toute la direction visuelle de l'interface (cartes, boutons, feuilles, animations CSS du splash).
+- `render.js` : rendu Canvas 2D. `OrloArt` dessine pierres et textures (aussi exportées en images CSS `--st1..3`) ; `OrloBoard` = un plateau animé (surface précalculée par taille, pierres en sprites, ombres, ondes, particules, aperçu, cibles, célébration).
 - `app.js` : interface et déroulé (écrans, partie contre l'ordinateur, tutoriel en 6 leçons, réglages en `localStorage`). Expose `window.Orlo` en lecture seule (état courant) pour les tests.
 - `engine.js` : règles + IA, sans dépendance. Global `Engine` dans le navigateur, `require` sous Node.
 - `worker.js` : exécute `Engine.search` dans un Web Worker.
@@ -15,8 +15,8 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 ## Rendu et animations (render.js)
 
 - Le canvas déborde de sa boîte carrée (`bleed`) pour que les pierres sortantes et les ombres ne soient pas coupées. `cellAt(x,y)` / `client(i,j)` convertissent pointeur ↔ croisement.
-- `playMove(trace, p, color)` renvoie une promesse : chute de la pierre posée, onde, poussée en cascade (décalée selon la distance), sortie avec fibres et secousse. Si `onEject` est défini, la pierre sortie est confiée au DOM (elle vole jusqu'à la réserve du joueur qui marque) ; sinon elle tombe du tissu.
-- `setPreview({p,color,trace,blocked})` : pierre fantôme, chevrons dorés (poussée), halo et double chevron garance (sortie), barre garance (file bloquée par une rouge).
+- `playMove(trace, p, color)` renvoie une promesse : chute de la pierre posée, onde, poussée en cascade (décalée selon la distance), sortie avec éclats et secousse. Si `onEject` est défini, la pierre sortie est confiée au DOM (elle vole jusqu'à la réserve du joueur qui marque) ; sinon elle tombe du plateau.
+- `setPreview({p,color,trace,blocked})` : pierre fantôme, chevrons (poussée), halo et double chevron rouges (sortie), barre rouge (file bloquée par une rouge).
 - Respecte `prefers-reduced-motion` (durées raccourcies, moins de particules, pas de secousse).
 - La boucle `requestAnimationFrame` ne tourne que s'il y a quelque chose à animer.
 
@@ -35,10 +35,10 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Règles originales, pas un clone de go ni d'Abalone. Une règle centrale en une phrase : « ta pierre pousse tout ce qui la touche ».
 - Équilibre visé « façon échecs » : léger avantage du premier joueur, pas plus. On n'équilibre pas en changeant le nombre de pierres à sortir (trop brutal), mais par le nombre de rouges.
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
-- Sur mobile : premier toucher = aperçu (chevrons, halo garance sur les pierres qui sortent), second toucher = jouer.
+- Sur mobile : premier toucher = aperçu (chevrons, halo rouge sur les pierres qui sortent), second toucher = jouer.
 - Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
-- Direction visuelle **chaleureuse** (le bleu guède a été jugé trop froid) : tissu teint et tissé posé sur une table en noyer éclairée par une lampe, fils brodés, ourlet cousu, cartes et boutons en cuir surpiqué, accents laiton et garance, pierres en dégradé, typo Fraunces arrondie (axe SOFT, titres et répliques en italique) + Figtree (texte, chiffres) — IM Fell English abandonnée, trop proche des jeux à thème légendaire, ambiance sombre unique.
-- Teintures du tissu (`THEMES` dans render.js, réglage « Teinture du tissu ») : safran (par défaut), lin naturel (fils rouille), olive (fils crème).
+- Direction visuelle **épurée et classe, numérique assumée** : pas d'imitation de matière (ni tissu, ni bois, ni coutures, ni cuir — essais abandonnés : bleu guède jugé froid, puis artisanal jugé « faux numérique »). Fond noir chaud uni (#121110), surfaces mates, filets d'un pixel, un seul accent champagne (#d4b483), rouge #e0564a, bouton principal plein ivoire. Typo unique Manrope ; logo en capitales légères très espacées. Vocabulaire : « plateau », « bord » (plus de « tissu »).
+- Plateaux (`THEMES` dans render.js, réglage « Plateau ») : sable (par défaut), ivoire, graphite (liseré clair sur les pierres noires). Surface en dégradé discret, quadrillage d'un pixel physique, points repères, ombre portée douce.
 - Aucune référence à une œuvre existante (pas de personnage nommé) : l'adversaire est désigné par son niveau (« le Compagnon réfléchit… »).
 
 ## Résultats de simulation (IA contre IA)
@@ -60,6 +60,6 @@ Parties : 35 à 45 coups entre IA fortes, première sortie vers le 10e coup, lim
 ## Pistes non tranchées
 
 - Rouges « déviation » (une poussée qui bute sur une rouge tourne à 90°) ou « pivot » (faire tourner les pierres autour d'une rouge). À ne tester que si les rouges paraissent trop défensives.
-- Départage des égalités (ex. : plus de pierres sur le tissu).
+- Départage des égalités (ex. : plus de pierres sur le plateau).
 - PWA, sauvegarde de partie, mode 2 joueurs local, sons, IA plus forte (table de transposition, killer moves).
 - Nom : vérifier marques (EUIPO/USPTO classes 9 et 28), domaine et App Store.
