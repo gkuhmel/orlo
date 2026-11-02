@@ -166,7 +166,7 @@ b.r{color:var(--red-soft)}
 
 /* ---------- plateau ---------- */
 .boardwrap{position:relative;width:min(100%,max(260px,calc(100dvh - 380px)));margin:4px auto}
-.boardbox{position:relative;width:100%;aspect-ratio:1/1;touch-action:manipulation;-webkit-user-select:none;user-select:none;cursor:pointer}
+.boardbox{position:relative;width:100%;aspect-ratio:1/1;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:pointer}
 .boardbox canvas{position:absolute;display:block;pointer-events:none}
 .boardbox.wait{cursor:progress}
 

@@ -35,10 +35,12 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Règles originales, pas un clone de go ni d'Abalone. Une règle centrale en une phrase : « ta pierre pousse tout ce qui la touche ».
 - Équilibre visé « façon échecs » : léger avantage du premier joueur, pas plus. On n'équilibre pas en changeant le nombre de pierres à sortir (trop brutal), mais par le nombre de rouges.
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
-- Sur mobile : premier toucher = aperçu (chevrons, halo rouge sur les pierres qui sortent), second toucher = jouer.
+- Sur mobile : toucher = aperçu (chevrons, halo rouge, gouttière allumée là où une pierre sortirait, anneau champagne qui respire = « retouche pour jouer ») ; glisser le doigt = l'aperçu suit ; retoucher la même intersection = jouer. Souris : survol = aperçu, clic = jouer.
+- Entrée gérée sur `pointerdown`/`pointerup` (pas `click` : sur iPhone Safari, `click` se déclare `pointerType: "mouse"` même au doigt, ce qui faisait jouer dès le premier toucher). Plateau en `touch-action: none`.
 - Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
 - Direction visuelle **épurée et classe, numérique assumée** : pas d'imitation de matière (ni tissu, ni bois, ni coutures, ni cuir — essais abandonnés : bleu guède jugé froid, puis artisanal jugé « faux numérique »). Fond noir chaud uni (#121110), surfaces mates, filets d'un pixel, un seul accent champagne (#d4b483), rouge #e0564a, bouton principal plein ivoire. Typo unique Manrope ; logo en capitales légères très espacées. Vocabulaire : « plateau », « bord » (plus de « tissu »).
-- Plateaux (`THEMES` dans render.js, réglage « Plateau ») : sable (par défaut), ivoire, graphite (liseré clair sur les pierres noires). Surface en dégradé discret, quadrillage d'un pixel physique, points repères, ombre portée douce.
+- Plateaux (`THEMES` dans render.js, réglage « Plateau ») : sable (par défaut), ivoire, graphite (liseré clair sur les pierres noires).
+- Le plateau est un objet en trois niveaux : cadre sombre biseauté → gouttière en creux (= « le bord », où tombent les pierres ; filet champagne à sa lisière) → surface de jeu en relief, éclairée au centre. Quadrillage d'un pixel physique, cadre extérieur de la grille plus marqué, points repères.
 - Aucune référence à une œuvre existante (pas de personnage nommé) : l'adversaire est désigné par son niveau (« le Compagnon réfléchit… »).
 
 ## Résultats de simulation (IA contre IA)

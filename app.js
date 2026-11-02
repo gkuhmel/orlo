@@ -44,21 +44,43 @@ document.querySelectorAll('[data-close]').forEach(function(b){b.onclick=closeShe
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheets();});
 
 /* ================= entrée commune (aperçu puis jeu) ================= */
+/* Entrée : souris = survol (aperçu) + clic (jouer).
+   Doigt = toucher (aperçu), glisser (l'aperçu suit), retoucher la même intersection (jouer).
+   On se fie au type de pointerdown : sur iPhone Safari, l'événement click se déclare « mouse » même au doigt. */
 function attachInput(board,h){
-  var sel=-1,box=board.box;
+  var sel=-1,box=board.box,down=null;
+  function setSel(q,armed){sel=q;h.preview(q,armed);}
   box.addEventListener('pointermove',function(ev){
-    if(ev.pointerType!=='mouse'||!h.can())return;
+    if(!h.can())return;
     var p=board.cellAt(ev.clientX,ev.clientY),q=p>=0&&h.valid(p)?p:-1;
-    if(q!==sel){sel=q;h.preview(q);}});
-  box.addEventListener('pointerleave',function(ev){if(ev.pointerType==='mouse'&&sel>=0){sel=-1;h.preview(-1);}});
-  box.addEventListener('click',function(ev){
+    if(ev.pointerType==='mouse'){if(q!==sel)setSel(q,false);return;}
+    if(!down||down.id!==ev.pointerId)return;
+    if(Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>8)down.moved=true;
+    if(q>=0&&q!==sel){setSel(q,true);down.moved=true;}
+  });
+  box.addEventListener('pointerleave',function(ev){if(ev.pointerType==='mouse'&&sel>=0)setSel(-1);});
+  box.addEventListener('pointerdown',function(ev){
     if(!h.can())return;
     var p=board.cellAt(ev.clientX,ev.clientY);
-    if(p<0||!h.valid(p)){if(p>=0&&h.invalid)h.invalid(p);sel=-1;h.preview(-1);return;}
-    var mouse=ev.pointerType==='mouse'||(!ev.pointerType&&HOVER.matches);
-    if(!mouse&&sel!==p){sel=p;h.preview(p);return;}
-    sel=-1;h.preview(-1);h.play(p);});
-  return{clear:function(){sel=-1;h.preview(-1);},get sel(){return sel;}};
+    if(ev.pointerType==='mouse'){
+      if(ev.button!==0)return;
+      if(p<0||!h.valid(p)){if(p>=0&&h.invalid)h.invalid(p);return;}
+      setSel(-1);h.play(p);return;}
+    ev.preventDefault();
+    try{box.setPointerCapture(ev.pointerId);}catch(e){}
+    var valid=p>=0&&h.valid(p);
+    down={id:ev.pointerId,x:ev.clientX,y:ev.clientY,moved:false,confirm:valid&&p===sel};
+    if(valid&&p!==sel)setSel(p,true);
+    else if(!valid){if(p>=0&&h.invalid)h.invalid(p);setSel(-1);}
+  });
+  box.addEventListener('pointerup',function(ev){
+    if(!down||down.id!==ev.pointerId)return;
+    var d=down;down=null;
+    if(!h.can())return;
+    if(d.confirm&&!d.moved&&sel>=0){var p=sel;setSel(-1);h.play(p);}
+  });
+  box.addEventListener('pointercancel',function(){down=null;});
+  return{clear:function(){down=null;setSel(-1);},get sel(){return sel;}};
 }
 /* files bloquées par une rouge : [{d, cells:[…], red}] */
 function blockedChains(b,p,N){
@@ -123,7 +145,7 @@ function AIc(){return 3-G.HC;}
 function fr(t){return String(t).replace(/ ([:;!?])/g,'\u202f$1');}
 function say(t){$('msg').textContent=fr(t);}
 function hint(h){$('hint').innerHTML=fr(h||'');}
-function idleHint(){hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu. Retouche : tu joues.');}
+function idleHint(){hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu (glisse pour explorer). Retouche : tu joues.');}
 
 function cardHTML(){return '<span class="pc-state"></span><div class="pc-top"><span class="avatar"><i class="st"></i></span><div class="pc-id"><span class="pc-name"></span><span class="pc-sub"></span></div>'+
   '<div class="pc-stats"><div class="pc-row" title="Pierres adverses sorties"><span class="tray"></span><span class="num ncap"></span></div>'+
@@ -168,7 +190,7 @@ function renderHUD(pop){
   $('gameBox').classList.toggle('wait',G.thinking);
 }
 function setMode(m){G.mode=m;$('modeStone').setAttribute('aria-pressed',m==='stone');$('modeRed').setAttribute('aria-pressed',m==='red');
-  if(gin&&gin.sel>=0)gPreview(gin.sel);}
+  if(gin&&gin.sel>=0)gPreview(gin.sel,!HOVER.matches);}
 $('modeStone').onclick=function(){setMode('stone');};
 $('modeRed').onclick=function(){setMode(G.mode==='red'?'stone':'red');};
 
@@ -182,12 +204,12 @@ gb.onEject=function(color,x,y,size){
 };
 
 function canPlay(){return current==='game'&&!G.busy&&!G.thinking&&G.cur&&!G.cur.winner&&G.cur.toPlay===G.HC;}
-function gPreview(p){
+function gPreview(p,armed){
   if(p<0){gb.setPreview(null);if(canPlay())idleHint();return;}
   eng();var red=G.mode==='red',m=red?p+E.REDOFF:p,t=E.clone(G.cur),tr=[];
   if(!E.play(t,m,tr)){gb.setPreview(null);return;}
   var bl=red?[]:blockedChains(G.cur.b,p,G.N);
-  gb.setPreview({p:p,color:red?3:G.HC,trace:tr,blocked:bl});
+  gb.setPreview({p:p,color:red?3:G.HC,trace:tr,blocked:bl,armed:!!armed});
   var out=tr.filter(function(x){return x[1]<0;}),mine=out.filter(function(x){return G.cur.b[x[0]]===G.HC;}).length,theirs=out.length-mine,parts=[];
   if(red)parts.push('<i class="st c3"></i> Rouge : elle bloquera toute file');
   else{
@@ -195,7 +217,7 @@ function gPreview(p){
     if(mine)parts.push('<span class="warn">perd '+stones(G.HC,mine)+'</span>');
     if(!out.length)parts.push(tr.length?'Pousse '+plural(tr.length,'pierre'):'Aucune poussée');
     if(bl.length)parts.push('<span class="warn">bloqué par une rouge</span>');}
-  hint(parts.join(' · ')+'<br><span class="tap">'+(HOVER.matches?'clique pour jouer':'touche encore pour jouer')+'</span>');
+  hint(parts.join(' · ')+'<br><span class="tap">'+(armed?'retouche la pierre pour jouer':'clique pour jouer')+'</span>');
 }
 var gin=attachInput(gb,{can:canPlay,valid:function(p){return !G.cur.b[p];},preview:gPreview,play:function(p){humanPlay(p);}});
 
@@ -317,7 +339,7 @@ $('sApply').onclick=function(){closeSheets();if(current!=='game')go('game');newG
 /* ================= tutoriel ================= */
 var tb=new OrloBoard(document.querySelector('#tuto canvas'),{n:5});
 var LESSONS=[
-  {t:'Poser une pierre',x:'Pose ta pierre blanche sur le cercle, juste à gauche de la noire.<br><em>Premier toucher : l’aperçu. Second toucher : tu joues.</em>',
+  {t:'Poser une pierre',x:'Pose ta pierre blanche sur le cercle, juste à gauche de la noire.<br><em>Touche : l’aperçu. Retouche la même intersection : tu joues.</em>',
    cells:{12:1},target:[11],ok:'Ta pierre a poussé la noire d’un cran. C’est toute la règle : <b>ta pierre pousse tout ce qui la touche.</b>'},
   {t:'Dans les quatre directions',x:'Pose ta pierre au centre de la croix. Regarde l’aperçu : les flèches montrent qui bouge.',
    cells:{7:1,11:1,13:1,17:1},target:[12],ok:'Les quatre reculent d’un seul coup : la poussée part dans les quatre directions à la fois.'},
@@ -352,11 +374,11 @@ function tTray(pop){var h='';for(var i=0;i<E.TARGET;i++)h+='<span class="hole'+(
   $('tTray').innerHTML=h;$('tNum').innerHTML=T.shown+'<small>/'+E.TARGET+'</small>';}
 function tCan(){return current==='tuto'&&!T.busy&&!T.done;}
 function tValid(p){return !T.s.b[p]&&(!T.targets.length||T.targets.indexOf(p)>=0);}
-function tPreview(p){
+function tPreview(p,armed){
   if(p<0){tb.setPreview(null);return;}
   tState();var L=LESSONS[T.i],red=L.mode==='red',t=E.clone(T.s),tr=[];
   if(!E.play(t,red?p+E.REDOFF:p,tr))return;
-  tb.setPreview({p:p,color:red?3:2,trace:tr,blocked:red?[]:blockedChains(T.s.b,p,5)});
+  tb.setPreview({p:p,color:red?3:2,trace:tr,blocked:red?[]:blockedChains(T.s.b,p,5),armed:!!armed});
 }
 function tNudge(){var l=$('lesson');l.classList.remove('nudge');void l.offsetWidth;l.classList.add('nudge');}
 var tin=attachInput(tb,{can:tCan,valid:tValid,preview:tPreview,invalid:function(p){if(!T.s.b[p])tNudge();},play:function(p){tPlay(p);}});
