@@ -4,6 +4,9 @@
 var E=Engine,$=function(id){return document.getElementById(id);};
 var RM=matchMedia('(prefers-reduced-motion: reduce)');
 var HOVER=matchMedia('(hover:hover) and (pointer:fine)');
+/* Appareil tactile (iPhone, iPad sans souris…) : toujours deux touchers, quel que soit le pointerType annoncé. */
+function touchMode(ev){return !HOVER.matches||ev.pointerType==='touch'||ev.pointerType==='pen';}
+var VERSION='6';
 var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti',the:'L’Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon',the:'Le Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître'}};
 function opp(){return LEVELS[cfg.level].the;}
 /* % de victoires de Noir en simulation IA contre IA (voir CLAUDE.md) */
@@ -53,16 +56,16 @@ function attachInput(board,h){
   box.addEventListener('pointermove',function(ev){
     if(!h.can())return;
     var p=board.cellAt(ev.clientX,ev.clientY),q=p>=0&&h.valid(p)?p:-1;
-    if(ev.pointerType==='mouse'){if(q!==sel)setSel(q,false);return;}
+    if(!touchMode(ev)){if(q!==sel)setSel(q,false);return;}
     if(!down||down.id!==ev.pointerId)return;
     if(Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>8)down.moved=true;
     if(q>=0&&q!==sel){setSel(q,true);down.moved=true;}
   });
-  box.addEventListener('pointerleave',function(ev){if(ev.pointerType==='mouse'&&sel>=0)setSel(-1);});
+  box.addEventListener('pointerleave',function(ev){if(!touchMode(ev)&&sel>=0)setSel(-1);});
   box.addEventListener('pointerdown',function(ev){
     if(!h.can())return;
     var p=board.cellAt(ev.clientX,ev.clientY);
-    if(ev.pointerType==='mouse'){
+    if(!touchMode(ev)){
       if(ev.button!==0)return;
       if(p<0||!h.valid(p)){if(p>=0&&h.invalid)h.invalid(p);return;}
       setSel(-1);h.play(p);return;}
@@ -128,7 +131,7 @@ function updateHome(){
   var inGame=G.cur&&G.hist.length&&!G.cur.winner;
   $('hPlay').textContent=inGame?'Reprendre la partie':'Jouer';
   $('newBadge').hidden=!!store.get('tutoDone',false);
-  $('summary').innerHTML='<b>'+cfg.size+'×'+cfg.size+'</b> · <b>'+plural(cfg.reds,'rouge')+'</b> · adversaire <b>'+LEVELS[cfg.level].name+'</b> · tu joues <b>'+colorName(cfg.color)+'</b>';
+  $('summary').innerHTML='<b>'+cfg.size+'×'+cfg.size+'</b> · <b>'+plural(cfg.reds,'rouge')+'</b> · adversaire <b>'+LEVELS[cfg.level].name+'</b> · tu joues <b>'+colorName(cfg.color)+'</b>'+'<span class="ver">v'+VERSION+'</span>';
 }
 $('hPlay').onclick=function(){if(G.cur&&G.hist.length&&!G.cur.winner){go('game');resumeGame();}else{go('game');newGame();}};
 $('hLearn').onclick=function(){go('tuto');loadLesson(0);};
@@ -138,7 +141,7 @@ $('hSettings').onclick=function(){openSettings('home');};
 var gb=new OrloBoard(document.querySelector('#gameBox canvas'),{n:cfg.size});
 var G={N:cfg.size,REDS:cfg.reds,HC:cfg.color,cur:null,hist:[],mode:'stone',busy:false,thinking:false,gid:0,shown:[0,0,0],pend:[0,0,0],flights:[]};
 var worker=null;
-function makeWorker(){try{var w=new Worker('worker.js');w.onmessage=function(e){onAI(e.data);};w.onerror=function(e){e.preventDefault&&e.preventDefault();worker=null;if(G.thinking)aiFallback();};return w;}catch(e){return null;}}
+function makeWorker(){try{var w=new Worker('worker.js?v='+VERSION);w.onmessage=function(e){onAI(e.data);};w.onerror=function(e){e.preventDefault&&e.preventDefault();worker=null;if(G.thinking)aiFallback();};return w;}catch(e){return null;}}
 worker=makeWorker();
 function eng(){E.configure(G.N);}
 function AIc(){return 3-G.HC;}

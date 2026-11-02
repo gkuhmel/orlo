@@ -20,6 +20,11 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Respecte `prefers-reduced-motion` (durées raccourcies, moins de particules, pas de secousse).
 - La boucle `requestAnimationFrame` ne tourne que s'il y a quelque chose à animer.
 
+## Version et cache
+
+- `VERSION` dans app.js (affichée en bas de l'accueil, « v6 ») et `?v=` sur les scripts et la feuille de style dans index.html : **les incrémenter ensemble à chaque mise en ligne**, pour que Safari ne garde pas d'anciens fichiers.
+- `_headers` (Cloudflare) : `Cache-Control: no-cache` sur tout le site.
+
 ## Moteur (engine.js)
 
 - Plateau N×N à plat (`Int8Array`) : 0 vide, 1 Noir, 2 Blanc, 3 rouge. `Engine.configure(n)` avant `newState(reds)`.
@@ -36,7 +41,7 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Équilibre visé « façon échecs » : léger avantage du premier joueur, pas plus. On n'équilibre pas en changeant le nombre de pierres à sortir (trop brutal), mais par le nombre de rouges.
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
 - Sur mobile : toucher = aperçu (chevrons, halo rouge, gouttière allumée là où une pierre sortirait, anneau champagne qui respire = « retouche pour jouer ») ; glisser le doigt = l'aperçu suit ; retoucher la même intersection = jouer. Souris : survol = aperçu, clic = jouer.
-- Entrée gérée sur `pointerdown`/`pointerup` (pas `click` : sur iPhone Safari, `click` se déclare `pointerType: "mouse"` même au doigt, ce qui faisait jouer dès le premier toucher). Plateau en `touch-action: none`.
+- Entrée gérée sur `pointerdown`/`pointerup`, jamais sur `click`. Tout appareil sans survol (`hover:hover and pointer:fine` faux, donc tout iPhone) exige deux touchers, quel que soit le `pointerType` annoncé : on ne s'y fie pas (sur iPhone Safari, `click` se déclare `mouse` même au doigt). Plateau en `touch-action: none`.
 - Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
 - Direction visuelle **épurée et classe, numérique assumée** : pas d'imitation de matière (ni tissu, ni bois, ni coutures, ni cuir — essais abandonnés : bleu guède jugé froid, puis artisanal jugé « faux numérique »). Fond noir chaud uni (#121110), surfaces mates, filets d'un pixel, un seul accent champagne (#d4b483), rouge #e0564a, bouton principal plein ivoire. Typo unique Manrope ; logo en capitales légères très espacées. Vocabulaire : « plateau », « bord » (plus de « tissu »).
 - Plateaux (`THEMES` dans render.js, réglage « Plateau ») : sable (par défaut), ivoire, graphite (liseré clair sur les pierres noires).

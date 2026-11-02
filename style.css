@@ -85,6 +85,7 @@ b.r{color:var(--red-soft)}
 .home-nav{width:100%;display:flex;flex-direction:column;gap:10px}
 .summary{margin:0;color:var(--dim);font-size:.82rem;text-align:center}
 .summary b{color:var(--muted);font-weight:600}
+.ver{display:block;margin-top:6px;font-size:.7rem;letter-spacing:.12em;color:var(--dim);opacity:.7}
 .badge{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);margin-left:10px;vertical-align:1px}
 
 /* ---------- boutons ---------- */
