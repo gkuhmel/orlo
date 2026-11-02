@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151a22">
+<title>Orlo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout : une colonne de jeu, le tissu au centre, joueurs au-dessus, commandes et règles dessous. Thème sombre unique, choisi. */
+:root{
+  --ground:#151a22;
+  --cloth:#26324f;
+  --thread:#d4cbb3;
+  --ink:#e6e0d2;
+  --muted:#9aa0ad;
+  --brass:#c2a466;
+  --madder:#b23a2f;
+  --panel:#1d2430;
+  --line:#2f394a;
+  --font-display:"IM Fell English SC","Iowan Old Style",Georgia,serif;
+  --font-italic:"IM Fell English","Iowan Old Style",Georgia,serif;
+  --font-body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--ground);color:var(--ink)}
+body{font-family:var(--font-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:18px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-direction:column;gap:2px}
+h1{font-family:var(--font-display);font-weight:400;font-size:2.1rem;line-height:1.05;margin:0;text-wrap:balance}
+.sub{font-family:var(--font-italic);font-style:italic;color:var(--muted);margin:0;font-size:1.02rem}
+
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pl.turn{border-color:var(--brass)}
+.pl .name{font-weight:700;display:flex;align-items:center;gap:8px}
+.row{font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{width:14px;height:14px;border-radius:50%;flex:none}
+.chip.b{background:radial-gradient(circle at 35% 30%,#555b65,#0c0e11)}
+.chip.w{background:radial-gradient(circle at 35% 30%,#fffdf6,#bdb59f)}
+.pips{display:inline-flex;gap:3px}
+.pips i{width:9px;height:9px;border-radius:2px;display:inline-block;box-shadow:inset 0 0 0 1px #4a5366}
+.pips i.on{background:var(--brass);box-shadow:none}
+.pips.red i{border-radius:50%;box-shadow:inset 0 0 0 1px #5a3a38}
+.pips.red i.on{background:var(--madder)}
+
+.boardbox{position:relative;width:100%;aspect-ratio:1/1;max-width:100%}
+#board{width:100%;height:100%;display:block;touch-action:manipulation;cursor:pointer;user-select:none;-webkit-user-select:none;overflow:visible}
+#board.wait{cursor:progress}
+.stone{transition:transform .24s cubic-bezier(.3,.7,.3,1),opacity .3s ease}
+.stone.gone{opacity:0}
+.inner{transform-box:fill-box;transform-origin:center}
+.placed .inner{animation:drop .2s ease-out}
+@keyframes drop{from{transform:scale(1.3);opacity:.3}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.stone{transition:none}.placed .inner{animation:none}}
+
+.status{min-height:2.8em;display:flex;flex-direction:column;gap:2px}
+#msg{font-family:var(--font-italic);font-style:italic;font-size:1.08rem}
+#hint{font-size:.88rem;color:var(--muted)}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0}
+.seg button+button{border-left:1px solid var(--line)}
+button,select{font:inherit;font-size:.95rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-height:40px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--brass)}
+.seg button[aria-pressed="true"]{background:var(--brass);color:#1a1610}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.spacer{flex:1}
+
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 14px}
+summary{cursor:pointer;font-family:var(--font-display);font-size:1.15rem;padding:6px 0}
+details ol{padding-left:1.2em;margin:4px 0 12px;display:flex;flex-direction:column;gap:6px}
+details p{margin:6px 0 12px;color:var(--muted)}
+b.r{color:#e0796d}
+</style>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Orlo</h1>
+    <p class="sub">Pousse-les jusqu'au bord du tissu.</p>
+  </header>
+
+  <div class="players">
+    <div class="pl" id="plB">
+      <span class="name"><span class="chip b" id="chipMe"></span>Toi</span>
+      <span class="row">Sorties <span class="pips" id="capB"></span></span>
+      <span class="row">Rouges <span class="pips red" id="redB"></span></span>
+    </div>
+    <div class="pl" id="plW">
+      <span class="name"><span class="chip w" id="chipAI"></span>Caudron</span>
+      <span class="row">Sorties <span class="pips" id="capW"></span></span>
+      <span class="row">Rouges <span class="pips red" id="redW"></span></span>
+    </div>
+  </div>
+
+  <div class="boardbox"><svg id="board" viewBox="0 0 380 380" role="img" aria-label="Plateau de 7 sur 7"></svg></div>
+
+  <div class="status" aria-live="polite">
+    <span id="msg">Caudron commence.</span>
+    <span id="hint">Touche un croisement pour voir l'effet, touche-le encore pour jouer.</span>
+  </div>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Type de pierre">
+      <button id="modeStone" aria-pressed="true">Ta pierre</button>
+      <button id="modeRed" aria-pressed="false">Pierre rouge</button>
+    </div>
+    <button id="undo">Annuler</button>
+  </div>
+  <div class="controls">
+    <label for="level" style="color:var(--muted);font-size:.9rem">Caudron</label>
+    <select id="level">
+      <option value="easy">Apprenti</option>
+      <option value="mid" selected>Compagnon</option>
+      <option value="hard">Maître</option>
+    </select>
+    <label for="color" style="color:var(--muted);font-size:.9rem">Tu joues</label>
+    <select id="color">
+      <option value="2" selected>Blanc (en second)</option>
+      <option value="1">Noir (en premier)</option>
+    </select>
+  </div>
+  <div class="controls">
+    <label for="size" style="color:var(--muted);font-size:.9rem">Grille</label>
+    <select id="size">
+      <option value="5">5×5</option><option value="6">6×6</option><option value="7" selected>7×7</option><option value="8">8×8</option><option value="9">9×9</option>
+    </select>
+    <label for="nreds" style="color:var(--muted);font-size:.9rem">Rouges</label>
+    <select id="nreds">
+      <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+    </select>
+    <span class="spacer"></span>
+    <button id="newgame">Nouvelle partie</button>
+  </div>
+  <p id="tune" style="margin:0;font-size:.85rem;color:var(--muted)">Équilibrés en simulation : 7×7 avec 4 rouges, ou 6×6 avec 3 rouges.</p>
+
+  <details open>
+    <summary>Règles</summary>
+    <ol>
+      <li>Noir commence. À ton tour, pose une pierre sur un croisement vide.</li>
+      <li>Elle <b>pousse</b> d'un cran tout ce qui la touche, dans les 4 directions. Une file de pierres collées est poussée en entier, quelle que soit sa couleur, les tiennes comprises.</li>
+      <li>Une pierre poussée hors du tissu est <b>sortie</b>. Sors <b>5 pierres de Caudron</b> pour gagner. Attention : si c'est toi qui sors tes propres pierres, elles comptent pour Caudron.</li>
+      <li>Chacun a <span id="rulesReds">4</span> <b class="r">pierres rouges</b>. Elles ne poussent pas, ne bougent jamais et bloquent toute file qui les contient. Idéales pour protéger un bord ou bloquer une attaque, mais poser une rouge te coûte ton tour.</li>
+    </ol>
+    <p>Si personne n'arrive à 5 après 120 coups, celui qui a perdu le moins de pierres gagne.</p>
+  </details>
+</div>
+
+<script src="engine.js"></script>
+
+<script>
+(function(){
+const E=Engine,M=34,NS="http://www.w3.org/2000/svg";
+let N=7,S=52,R=21,REDS=4;
+const svg=document.getElementById('board');
+const $=id=>document.getElementById(id);
+const LEVELS={easy:{ms:400,maxDepth:2},mid:{ms:1500,maxDepth:12},hard:{ms:4000,maxDepth:20}};
+let HC=2,cur=E.newState(REDS),ids=new Int32Array(49),nextId=1,hist=[],mode='stone',thinking=false,sel=-1,lastId=0,worker=null,gameId=0;
+const stones=new Map();
+
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||svg).appendChild(e);return e;}
+const px=p=>M+S*(p%N),py=p=>M+S*Math.floor(p/N);
+const defs=el('defs',{});
+defs.innerHTML=`
+<pattern id="weave" width="6" height="6" patternUnits="userSpaceOnUse">
+  <rect width="6" height="6" fill="#26324f"/>
+  <path d="M0 1.5H6M0 4.5H6" stroke="#2f3d60" stroke-width="1.2"/>
+  <path d="M1.5 0V6M4.5 0V6" stroke="#1f2a44" stroke-width=".8" opacity=".8"/>
+</pattern>
+<radialGradient id="gB" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#5b616b"/><stop offset=".55" stop-color="#22262c"/><stop offset="1" stop-color="#0b0c0f"/></radialGradient>
+<radialGradient id="gW" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fffdf7"/><stop offset=".6" stop-color="#e7e0cd"/><stop offset="1" stop-color="#b3aa93"/></radialGradient>
+<radialGradient id="gR" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#e5786a"/><stop offset=".55" stop-color="#ac3128"/><stop offset="1" stop-color="#5e130f"/></radialGradient>
+<marker id="arw" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c2a466"/></marker>
+<marker id="arwR" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#e0796d"/></marker>`;
+const boardLayer=el('g',{});
+function drawBoard(){boardLayer.textContent='';
+  S=(380-2*M)/(N-1);R=Math.min(21,S*0.41);
+  el('rect',{x:6,y:6,width:368,height:368,rx:6,fill:'url(#weave)'},boardLayer);
+  el('rect',{x:6,y:6,width:368,height:368,rx:6,fill:'none',stroke:'#3a4a72','stroke-width':2},boardLayer);
+  for(let i=0;i<N;i++){const c=M+S*i;
+    el('line',{x1:M,y1:c,x2:M+S*(N-1),y2:c,stroke:'#d4cbb3','stroke-opacity':.7,'stroke-width':1.3},boardLayer);
+    el('line',{x1:c,y1:M,x2:c,y2:M+S*(N-1),stroke:'#d4cbb3','stroke-opacity':.7,'stroke-width':1.3},boardLayer);}
+  if(N%2){const c=(N*N-1)/2;el('circle',{cx:px(c),cy:py(c),r:3.4,fill:'#d4cbb3','fill-opacity':.85},boardLayer);}
+  svg.setAttribute('aria-label',`Plateau de ${N} sur ${N}`);}
+drawBoard();
+const stoneLayer=el('g',{}),prevLayer=el('g',{'pointer-events':'none'});
+const fills=['','url(#gB)','url(#gW)','url(#gR)'];
+
+/* --- pierres animées --- */
+function makeStone(id,p,color,anim){
+  const g=el('g',{class:'stone'+(anim?' placed':'')},stoneLayer);
+  g.style.transform=`translate(${px(p)}px,${py(p)}px)`;
+  const inner=el('g',{class:'inner'},g);
+  el('circle',{cx:1.8,cy:2.6,r:R,fill:'#000','fill-opacity':.35},inner);
+  el('circle',{cx:0,cy:0,r:R,fill:fills[color]},inner);
+  const ring=el('circle',{cx:0,cy:0,r:7,fill:'none',stroke:color===2?'#26324f':'#d4cbb3','stroke-width':2.2,visibility:'hidden'},inner);
+  stones.set(id,{g,ring,p});}
+function rebuildAll(){stoneLayer.textContent='';stones.clear();
+  for(let p=0;p<N*N;p++)if(ids[p])makeStone(ids[p],p,cur.b[p],false);markLast();}
+function markLast(){stones.forEach((s,id)=>s.ring.setAttribute('visibility',id===lastId?'visible':'hidden'));}
+function applyMove(m){
+  const t=E.clone(cur),trace=[];
+  if(!E.play(t,m,trace))return false;
+  hist.push({s:cur,ids:ids.slice(),lastId});
+  const nid=ids.slice();
+  for(const [f] of trace)nid[f]=0;
+  for(const [f,to,d] of trace){
+    const id=ids[f];
+    if(to>=0){nid[to]=id;const st=stones.get(id);st.p=to;st.g.style.transform=`translate(${px(to)}px,${py(to)}px)`;}
+    else{const st=stones.get(id);const x=px(f)+[1,-1,0,0][d]*S*0.9,y=py(f)+[0,0,1,-1][d]*S*0.9;
+      st.g.style.transform=`translate(${x}px,${y}px)`;st.g.classList.add('gone');stones.delete(id);
+      setTimeout(()=>st.g.remove(),340);}}
+  const p=m>=E.REDOFF?m-E.REDOFF:m,id=nextId++;nid[p]=id;
+  makeStone(id,p,t.b[p],true);
+  cur=t;ids=nid;lastId=id;markLast();
+  return true;}
+
+/* --- aperçu du coup --- */
+function showPreview(p){
+  prevLayer.textContent='';
+  if(p<0)return;
+  const m=mode==='red'?p+E.REDOFF:p,t=E.clone(cur),trace=[];
+  if(!E.play(t,m,trace))return;
+  el('circle',{cx:px(p),cy:py(p),r:R,fill:mode==='red'?'url(#gR)':fills[HC],'fill-opacity':.5},prevLayer);
+  for(const [f,to,d] of trace){
+    const x1=px(f),y1=py(f),dx=[1,-1,0,0][d],dy=[0,0,1,-1][d],len=to>=0?S*0.62:S*0.75;
+    el('line',{x1:x1+dx*8,y1:y1+dy*8,x2:x1+dx*len,y2:y1+dy*len,stroke:to>=0?'#c2a466':'#e0796d','stroke-width':3.2,'marker-end':to>=0?'url(#arw)':'url(#arwR)'},prevLayer);
+    if(to<0){el('path',{d:`M${x1-8} ${y1-8}L${x1+8} ${y1+8}M${x1+8} ${y1-8}L${x1-8} ${y1+8}`,stroke:'#e0796d','stroke-width':3,'stroke-linecap':'round'},prevLayer);}}
+  const out=trace.filter(x=>x[1]<0);
+  if(out.length){const mine=out.filter(x=>cur.b[x[0]]===HC).length,theirs=out.length-mine;
+    $('hint').textContent=`Ce coup sort ${theirs} pierre${theirs>1?'s':''} de Caudron`+(mine?` et ${mine} des tiennes`:'')+'. Touche encore pour jouer.';}
+  else $('hint').textContent=trace.length?'Touche encore pour jouer.':'Aucune poussée. Touche encore pour jouer.';
+}
+
+/* --- interface --- */
+function pips(id,n,max){const box=$(id);box.innerHTML='';for(let i=0;i<max;i++){const d=document.createElement('i');if(i<n)d.className='on';box.appendChild(d);}}
+function setMode(m){mode=m;$('modeStone').setAttribute('aria-pressed',m==='stone');$('modeRed').setAttribute('aria-pressed',m==='red');if(sel>=0)showPreview(sel);}
+function say(t){$('msg').textContent=t;}
+function refresh(){
+  const AI=3-HC;
+  pips('capB',cur.lost[AI],E.TARGET);pips('capW',cur.lost[HC],E.TARGET);
+  pips('redB',cur.reds[HC],REDS);pips('redW',cur.reds[AI],REDS);
+  $('chipMe').className='chip '+(HC===1?'b':'w');$('chipAI').className='chip '+(HC===1?'w':'b');
+  const over=!!cur.winner;
+  $('plB').classList.toggle('turn',!over&&cur.toPlay===HC);
+  $('plW').classList.toggle('turn',!over&&cur.toPlay===AI);
+  $('modeStone').disabled=thinking||over;$('modeRed').disabled=thinking||over||cur.reds[HC]<=0;
+  if(cur.reds[HC]<=0&&mode==='red')setMode('stone');
+  $('undo').disabled=thinking||hist.length<1;
+  svg.classList.toggle('wait',thinking);}
+
+function pointAt(ev){const r=svg.getBoundingClientRect(),sx=(ev.clientX-r.left)*380/r.width,sy=(ev.clientY-r.top)*380/r.height;
+  const x=Math.round((sx-M)/S),y=Math.round((sy-M)/S);
+  if(x<0||y<0||x>=N||y>=N)return -1;
+  if(Math.hypot(sx-(M+S*x),sy-(M+S*y))>S*0.55)return -1;
+  return y*N+x;}
+const canPlay=()=>!thinking&&!cur.winner&&cur.toPlay===HC;
+svg.addEventListener('pointermove',ev=>{
+  if(ev.pointerType!=='mouse'||!canPlay())return;
+  const p=pointAt(ev);const q=p>=0&&!cur.b[p]?p:-1;
+  if(q!==sel){sel=q;showPreview(q);if(q<0)$('hint').textContent='Survole un croisement pour voir l’effet, clique pour jouer.';}});
+svg.addEventListener('pointerleave',ev=>{if(ev.pointerType==='mouse'){sel=-1;showPreview(-1);}});
+svg.addEventListener('click',ev=>{
+  if(!canPlay())return;
+  const p=pointAt(ev);
+  if(p<0||cur.b[p]){sel=-1;showPreview(-1);return;}
+  const isMouse=ev.pointerType==='mouse'||(ev.pointerType===undefined&&matchMedia('(hover:hover)').matches);
+  if(!isMouse&&sel!==p){sel=p;showPreview(p);return;}
+  const m=mode==='red'?p+E.REDOFF:p;
+  sel=-1;showPreview(-1);
+  if(!applyMove(m))return;
+  if(mode==='red')setMode('stone');
+  afterMove();});
+
+function afterMove(aiLine){
+  refresh();
+  if(cur.winner){
+    const sc=` (${cur.lost[3-HC]} sorties contre ${cur.lost[HC]})`;
+    say(cur.winner===3?'Égalité parfaite.'+sc:cur.winner===HC?'Tu gagnes ! Caudron hoche la tête, impressionné.'+sc:'Caudron gagne cette fois.'+sc);
+    $('hint').textContent='Nouvelle partie pour rejouer, ou Annuler pour revenir en arrière.';return;}
+  if(cur.toPlay!==HC){setTimeout(aiTurn,280);return;}
+  say(aiLine||'À toi.');
+  $('hint').textContent=matchMedia('(hover:hover)').matches?'Survole un croisement pour voir l’effet, clique pour jouer.':'Touche un croisement pour voir l’effet, touche-le encore pour jouer.';}
+
+function makeWorker(){
+  try{const w=new Worker('worker.js');
+    w.onmessage=e=>onAI(e.data);w.onerror=()=>{worker=null;};return w;}catch(e){return null;}}
+worker=makeWorker();
+function aiTurn(){
+  thinking=true;refresh();say('Caudron réfléchit…');$('hint').textContent='';
+  const opts=LEVELS[$('level').value],gid=gameId;
+  const st={b:Array.from(cur.b),toPlay:cur.toPlay,reds:cur.reds.slice(),lost:cur.lost.slice(),moves:cur.moves,winner:cur.winner,last:cur.last};
+  if(worker)worker.postMessage({state:st,opts,gid,n:N});
+  else setTimeout(()=>{const r=E.search(E.clone(cur),{ms:Math.min(opts.ms,1200),maxDepth:opts.maxDepth});r.gid=gid;onAI(r);},30);}
+function onAI(r){
+  if(!thinking||r.gid!==gameId)return;
+  thinking=false;
+  const before=cur.lost.slice();
+  applyMove(r.move);
+  const outW=cur.lost[HC]-before[HC],outB=cur.lost[3-HC]-before[3-HC];
+  let line=r.move>=E.REDOFF?'Caudron pose une pierre rouge.':outW?`Caudron sort ${outW} de tes pierres.`:'Caudron a joué.';
+  if(outB)line+=` Il perd ${outB} pierre${outB>1?'s':''} au passage.`;
+  if(r.score>50000)line+=' Il voit sa victoire venir.';
+  else if(r.score<-50000)line+=' Il semble inquiet.';
+  afterMove(line);}
+
+$('modeStone').onclick=()=>setMode('stone');
+$('modeRed').onclick=()=>setMode('red');
+$('undo').onclick=()=>{if(thinking||!hist.length)return;
+  let h=hist.pop();while(h.s.toPlay!==HC&&hist.length)h=hist.pop();
+  if(h.s.toPlay!==HC)return;
+  cur=h.s;ids=h.ids;lastId=h.lastId;sel=-1;showPreview(-1);rebuildAll();refresh();say('Coup annulé. À toi.');};
+function newGame(){HC=+$('color').value;gameId++;if(thinking&&worker){worker.terminate();worker=makeWorker();}
+  N=+$('size').value;REDS=+$('nreds').value;E.configure(N);drawBoard();$('rulesReds').textContent=REDS;
+  thinking=false;cur=E.newState(REDS);ids=new Int32Array(N*N);hist=[];lastId=0;sel=-1;showPreview(-1);setMode('stone');rebuildAll();
+  say(HC===1?'Nouvelle partie. À toi de commencer.':'Nouvelle partie. Caudron commence.');afterMove();}
+$('newgame').onclick=newGame;
+const onSetting=()=>{if(!hist.length||cur.winner)newGame();else{$('msg').textContent='Le réglage s\u2019appliquera à la prochaine partie.';}};
+$('color').onchange=onSetting;$('size').onchange=onSetting;$('nreds').onchange=onSetting;
+
+rebuildAll();refresh();say('Caudron commence.');afterMove();
+})();
+</script>
+</body>
+</html>
