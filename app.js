@@ -1,22 +1,25 @@
-/* Orlo — interface : écran d'ouverture, accueil, partie contre Caudron, tutoriel, réglages. */
+/* Orlo — interface : écran d'ouverture, accueil, partie contre l'ordinateur, tutoriel, réglages. */
 (function(){
 "use strict";
 var E=Engine,$=function(id){return document.getElementById(id);};
 var RM=matchMedia('(prefers-reduced-motion: reduce)');
 var HOVER=matchMedia('(hover:hover) and (pointer:fine)');
-var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître'}};
+var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti',the:'L’Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon',the:'Le Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître'}};
+function opp(){return LEVELS[cfg.level].the;}
 /* % de victoires de Noir en simulation IA contre IA (voir CLAUDE.md) */
 var BAL={'6:3':60,'6:4':100,'7:3':12,'7:4':50,'8:3':0,'8:4':4};
 var DX=[1,-1,0,0],DY=[0,0,1,-1];
 var store={get:function(k,d){try{var v=localStorage.getItem('orlo.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
   set:function(k,v){try{localStorage.setItem('orlo.'+k,JSON.stringify(v));}catch(e){}}};
-var cfg=Object.assign({level:'mid',color:2,size:7,reds:4},store.get('settings',{}));
+var cfg=Object.assign({level:'mid',color:2,size:7,reds:4,theme:'safran'},store.get('settings',{}));
+OrloArt.setTheme(cfg.theme);
 function saveCfg(){store.set('settings',cfg);}
 
 /* images des pierres pour le DOM, dessinées par le même code que le plateau */
 var rs=document.documentElement.style;
-[1,2,3].forEach(function(c){rs.setProperty('--st'+c,'url('+OrloArt.url(c,96)+')');});
-rs.setProperty('--weave','url('+OrloArt.weaveTile()+')');
+function artVars(){[1,2,3].forEach(function(c){rs.setProperty('--st'+c,'url('+OrloArt.url(c,96)+')');});
+  rs.setProperty('--cloth','url('+OrloArt.clothTile()+')');}
+artVars();rs.setProperty('--wood','url('+OrloArt.woodTile()+')');
 
 function stones(c,n){var s='';for(var i=0;i<n;i++)s+='<i class="st c'+c+'"></i>';return s;}
 function plural(n,w){return n+' '+w+(n>1?'s':'');}
@@ -101,9 +104,9 @@ function demoTick(ms){clearTimeout(demo.timer);demo.timer=setTimeout(function(){
 },ms);}
 function updateHome(){
   var inGame=G.cur&&G.hist.length&&!G.cur.winner;
-  $('hPlay').textContent=inGame?'Reprendre la partie':'Jouer contre Caudron';
+  $('hPlay').textContent=inGame?'Reprendre la partie':'Jouer';
   $('newBadge').hidden=!!store.get('tutoDone',false);
-  $('summary').innerHTML='<b>'+cfg.size+'×'+cfg.size+'</b> · <b>'+plural(cfg.reds,'rouge')+'</b> · Caudron <b>'+LEVELS[cfg.level].name+'</b> · tu joues <b>'+colorName(cfg.color)+'</b>';
+  $('summary').innerHTML='<b>'+cfg.size+'×'+cfg.size+'</b> · <b>'+plural(cfg.reds,'rouge')+'</b> · adversaire <b>'+LEVELS[cfg.level].name+'</b> · tu joues <b>'+colorName(cfg.color)+'</b>';
 }
 $('hPlay').onclick=function(){if(G.cur&&G.hist.length&&!G.cur.winner){go('game');resumeGame();}else{go('game');newGame();}};
 $('hLearn').onclick=function(){go('tuto');loadLesson(0);};
@@ -130,8 +133,8 @@ $('cardAI').innerHTML=cardHTML();$('cardMe').innerHTML=cardHTML();
 function renderCard(card,player,isMe,popIdx){
   var opp=3-player,s=G.cur,q=function(sel){return card.querySelector(sel);};
   q('.avatar .st').className='st c'+player;
-  q('.pc-name').textContent=isMe?'Toi':'Caudron';
-  q('.pc-sub').textContent=isMe?colorName(player)+(player===1?' · joue en premier':' · joue en second'):LEVELS[cfg.level].name+' · '+colorName(player);
+  q('.pc-name').textContent=isMe?'Toi':LEVELS[cfg.level].name;
+  q('.pc-sub').textContent=isMe?colorName(player)+(player===1?' · joue en premier':' · joue en second'):'Ordinateur · '+colorName(player);
   var got=Math.min(E.TARGET,G.shown[opp]),h='';
   for(var i=0;i<E.TARGET;i++)h+='<span class="hole'+(i===popIdx?' pop':'')+'">'+(i<got?'<i class="st c'+opp+'"></i>':'')+'</span>';
   q('.tray').innerHTML=h;
@@ -219,7 +222,7 @@ function next(){
 function syncShown(){G.shown=G.cur.lost.slice();G.pend=[0,0,0];}
 
 function aiTurn(){
-  G.thinking=true;renderHUD();say('Caudron réfléchit…');hint('');
+  G.thinking=true;renderHUD();say(opp()+' réfléchit…');hint('');
   var opts=LEVELS[cfg.level],gid=G.gid,s=G.cur;G.aiT0=performance.now();
   var st={b:Array.from(s.b),toPlay:s.toPlay,reds:s.reds.slice(),lost:s.lost.slice(),moves:s.moves,winner:s.winner,last:s.last};
   if(worker)worker.postMessage({state:st,opts:{ms:opts.ms,maxDepth:opts.maxDepth},gid:gid,n:G.N});
@@ -237,8 +240,8 @@ function onAI(r){
     var bl=m>=E.REDOFF?[]:blockedChains(G.cur.b,p,G.N);
     E.play(t,m,tr);G.hist.push(G.cur);G.cur=t;renderHUD();
     var outMe=t.lost[G.HC]-before[G.HC],outAI=t.lost[AIc()]-before[AIc()],line;
-    line=m>=E.REDOFF?'Caudron pose une pierre rouge.':'Caudron a joué.';
-    if(outMe)line=outMe>1?'Caudron sort '+outMe+' de tes pierres.':'Caudron sort une de tes pierres.';
+    line=m>=E.REDOFF?opp()+' pose une pierre rouge.':opp()+' a joué.';
+    if(outMe)line=opp()+(outMe>1?' sort '+outMe+' de tes pierres.':' sort une de tes pierres.');
     if(outAI)line+=outAI>1?' Il en perd '+outAI+' au passage.':' Il en perd une au passage.';
     if(!t.winner){if(r.score>50000)line+=' Il voit sa victoire venir.';else if(r.score<-50000)line+=' Il semble inquiet.';}
     say(line);
@@ -249,14 +252,14 @@ function onAI(r){
 
 function endGame(){
   var w=G.cur.winner,HC=G.HC,AI=AIc(),card=$('endCard');
-  say(w===HC?'Tu gagnes !':w===3?'Égalité parfaite.':'Caudron gagne cette fois.');
+  say(w===HC?'Tu gagnes !':w===3?'Égalité parfaite.':opp()+' gagne cette fois.');
   hint('<button class="linkbtn" id="hAgain">Rejouer</button> · <button class="linkbtn" id="hRes">Voir le résultat</button>');
   $('hAgain').onclick=newGame;$('hRes').onclick=function(){card.hidden=false;};
   gb.celebrate(w===3?0:w);
   $('endTitle').textContent=w===HC?'Victoire':w===3?'Égalité':'Défaite';
   card.classList.toggle('lose',w!==HC&&w!==3);
   $('endScore').innerHTML='<i class="st c'+HC+'"></i>'+G.cur.lost[AI]+'<small>contre</small>'+G.cur.lost[HC]+'<i class="st c'+AI+'"></i>';
-  $('endLine').textContent=fr(w===HC?'Caudron hoche la tête, impressionné.':w===3?'Personne n’a cédé un pouce de tissu.':'Caudron range ses pierres en souriant. Revanche ?');
+  $('endLine').textContent=fr(w===HC?'Belle partie, bien poussée.':w===3?'Personne n’a cédé un pouce de tissu.':'Le tissu a parlé. Revanche ?');
   setTimeout(function(){if(G.cur.winner&&current==='game')card.hidden=false;},RM.matches?200:1300);
 }
 $('eAgain').onclick=function(){newGame();};
@@ -268,7 +271,7 @@ function newGame(){
   eng();G.cur=E.newState(G.REDS);G.hist=[];syncShown();
   gb.setN(G.N);gb.reset(G.cur.b,-1);$('endCard').hidden=true;setMode('stone');if(gin)gin.clear();
   $('gameBox').querySelector('canvas').setAttribute('aria-label','Plateau de '+G.N+' sur '+G.N);
-  say(G.HC===1?'Nouvelle partie. À toi de commencer.':'Nouvelle partie. Caudron commence.');
+  say(G.HC===1?'Nouvelle partie. À toi de commencer.':'Nouvelle partie. '+opp()+' commence.');
   next();
 }
 function resumeGame(){gb.resize();renderHUD();if(!G.thinking&&!G.busy&&G.cur.toPlay===G.HC)idleHint();}
@@ -290,22 +293,24 @@ function opts(id,list,key,num){
   var box=$(id);box.innerHTML='';
   list.forEach(function(o){var b=document.createElement('button');b.className='opt';b.innerHTML=o[1];
     b.setAttribute('aria-pressed',String(cfg[key])===String(o[0]));
-    b.onclick=function(){cfg[key]=num?+o[0]:o[0];saveCfg();renderSettings();if(current==='home')updateHome();if(current==='game')renderHUD();};
+    b.onclick=function(){cfg[key]=num?+o[0]:o[0];saveCfg();if(key==='theme')applyTheme();renderSettings();if(current==='home')updateHome();if(current==='game')renderHUD();};
     box.appendChild(b);});}
 function renderSettings(){
   opts('sLevel',[['easy','Apprenti'],['mid','Compagnon'],['hard','Maître']],'level');
   opts('sColor',[[2,'<i class="st c2"></i>Blanc <small>· 2e</small>'],[1,'<i class="st c1"></i>Noir <small>· 1er</small>']],'color',true);
   opts('sSize',[5,6,7,8,9].map(function(n){return[n,n+'×'+n];}),'size',true);
   opts('sReds',[0,1,2,3,4,5,6,7,8].map(function(n){return[n,String(n)];}),'reds',true);
+  opts('sTheme',[['safran','<i class="sw sw-safran"></i>Safran'],['lin','<i class="sw sw-lin"></i>Lin'],['olive','<i class="sw sw-olive"></i>Olive']],'theme');
   var b=BAL[cfg.size+':'+cfg.reds],box=$('sBal');
   if(b==null){box.innerHTML='<p class="bal-txt" style="margin:0">Combinaison pas encore testée en simulation. Équilibrées : <b>7×7 · 4 rouges</b> ou <b>6×6 · 3 rouges</b>.</p>';}
   else{var verdict=b>=40&&b<=62?'<b>équilibré</b>':b>62?'Noir (1er) <b>très avantagé</b>':'Blanc (2e) <b>très avantagé</b>';
     box.innerHTML='<div style="flex:1"><p class="bal-txt">Équilibre mesuré\u202f: '+verdict+' · Noir gagne ~'+b+' %</p><div style="display:flex;align-items:center;gap:8px"><i class="st c1"></i><div class="bal-bar"><i style="left:'+(100-b)+'%"></i></div><i class="st c2"></i></div></div>';}
   var differs=G.cur&&G.hist.length&&!G.cur.winner&&(cfg.size!==G.N||cfg.reds!==G.REDS||+cfg.color!==G.HC);
-  $('sNote').textContent=differs?'Tissu, couleur et rouges s’appliqueront à la prochaine partie. Le niveau change tout de suite.':'';
+  $('sNote').textContent=differs?'Taille, couleur et rouges s’appliqueront à la prochaine partie. Le niveau change tout de suite.':'';
   $('sNote').className='note'+(differs?' warn':'');
   $('sApply').textContent=setFrom==='game'?'Nouvelle partie':'Jouer';
 }
+function applyTheme(){OrloArt.setTheme(cfg.theme);artVars();[db,gb,tb].forEach(function(b){b.rebuild();});}
 function openSettings(from){setFrom=from;renderSettings();openSheet('setSheet');}
 $('sApply').onclick=function(){closeSheets();if(current!=='game')go('game');newGame();};
 

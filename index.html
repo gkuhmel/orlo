@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f141d">
+<meta name="theme-color" content="#21140c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Orlo</title>
@@ -39,7 +39,7 @@
     </header>
     <div class="demo" aria-hidden="true"><div class="boardbox"><canvas></canvas></div></div>
     <nav class="home-nav">
-      <button class="btn primary big" id="hPlay">Jouer contre Caudron</button>
+      <button class="btn primary big" id="hPlay">Jouer</button>
       <button class="btn" id="hLearn">Apprendre à jouer <span class="badge" id="newBadge">2 min</span></button>
       <button class="btn ghost" id="hSettings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</button>
     </nav>
@@ -120,9 +120,10 @@
   <h2 id="setTitle">Réglages</h2>
   <div class="field"><span class="flabel">Adversaire</span><div class="opts" id="sLevel"></div></div>
   <div class="field"><span class="flabel">Tu joues</span><div class="opts" id="sColor"></div></div>
-  <div class="field"><span class="flabel">Tissu</span><div class="opts" id="sSize"></div></div>
+  <div class="field"><span class="flabel">Taille du tissu</span><div class="opts" id="sSize"></div></div>
   <div class="field"><span class="flabel">Pierres rouges par joueur</span><div class="opts" id="sReds"></div></div>
   <div class="balance" id="sBal"></div>
+  <div class="field"><span class="flabel">Teinture du tissu</span><div class="opts" id="sTheme"></div></div>
   <p class="note" id="sNote"></p>
   <div class="sheet-actions">
     <button class="btn ghost" data-close>Fermer</button>

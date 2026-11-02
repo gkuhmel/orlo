@@ -6,8 +6,8 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 
 - `index.html` : structure des écrans (ouverture, accueil, partie, tutoriel) et des feuilles (réglages, règles). Pas de build.
 - `style.css` : toute la direction visuelle de l'interface (cartes cousues, boutons, feuilles, animations CSS du splash).
-- `render.js` : rendu Canvas 2D. `OrloArt` dessine pierres et textures (aussi exportées en images CSS `--st1..3`, `--weave`) ; `OrloBoard` = un plateau animé (tissu tissé précalculé par taille, pierres en sprites, ombres, ondes, particules, aperçu, cibles, célébration).
-- `app.js` : interface et déroulé (écrans, partie contre Caudron, tutoriel en 6 leçons, réglages en `localStorage`). Expose `window.Orlo` en lecture seule (état courant) pour les tests.
+- `render.js` : rendu Canvas 2D. `OrloArt` dessine pierres et textures (aussi exportées en images CSS `--st1..3`, `--cloth`, `--wood`) ; `OrloBoard` = un plateau animé (tissu tissé précalculé par taille, pierres en sprites, ombres, ondes, particules, aperçu, cibles, célébration).
+- `app.js` : interface et déroulé (écrans, partie contre l'ordinateur, tutoriel en 6 leçons, réglages en `localStorage`). Expose `window.Orlo` en lecture seule (état courant) pour les tests.
 - `engine.js` : règles + IA, sans dépendance. Global `Engine` dans le navigateur, `require` sous Node.
 - `worker.js` : exécute `Engine.search` dans un Web Worker.
 - `tools/` : simulations Node (équilibrage, test de compétence).
@@ -37,7 +37,9 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
 - Sur mobile : premier toucher = aperçu (chevrons, halo garance sur les pierres qui sortent), second toucher = jouer.
 - Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
-- Direction visuelle : tissu bleu guède tissé, fils de lin, pierres en dégradé, rouge garance, typo IM Fell English + Alegreya Sans, thème sombre unique.
+- Direction visuelle **chaleureuse** (le bleu guède a été jugé trop froid) : tissu teint et tissé posé sur une table en noyer éclairée par une lampe, fils brodés, ourlet cousu, cartes et boutons en cuir surpiqué, accents laiton et garance, pierres en dégradé, typo IM Fell English + Alegreya Sans, ambiance sombre unique.
+- Teintures du tissu (`THEMES` dans render.js, réglage « Teinture du tissu ») : safran (par défaut), lin naturel (fils rouille), olive (fils crème).
+- Aucune référence à une œuvre existante (pas de personnage nommé) : l'adversaire est désigné par son niveau (« le Compagnon réfléchit… »).
 
 ## Résultats de simulation (IA contre IA)
 

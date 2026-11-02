@@ -1,7 +1,6 @@
 # Orlo
 
-Jeu abstrait à deux joueurs, sur un tissu quadrillé, contre une IA nommée Caudron.
-Inspiré du jeu de pierres que Caudron apprend à Fitz dans *L'Assassin royal* de Robin Hobb (le livre ne donne aucune règle, celles-ci sont originales).
+Jeu abstrait à deux joueurs, sur un tissu quadrillé, contre l'ordinateur (trois niveaux : Apprenti, Compagnon, Maître).
 
 *Orlo* : « ourlet, bord du tissu » en italien ; *sull'orlo*, « au bord du gouffre ».
 
@@ -15,7 +14,7 @@ Inspiré du jeu de pierres que Caudron apprend à Fitz dans *L'Assassin royal* d
 
 ## Interface
 
-Écran d'ouverture, accueil avec une partie de démonstration, tutoriel interactif en 6 leçons, partie contre Caudron (3 niveaux), réglages (taille, rouges, couleur) avec l'équilibre mesuré en simulation. Rendu Canvas : tissu de guède tissé, lignes en fil de lin brodé, ourlet cousu, pierres animées.
+Écran d'ouverture, accueil avec une partie de démonstration, tutoriel interactif en 6 leçons, partie contre l'ordinateur (3 niveaux), réglages (taille, rouges, couleur) avec l'équilibre mesuré en simulation. Rendu Canvas : tissu teint et tissé (safran, lin ou olive) posé sur une table en noyer, lignes brodées, ourlet cousu, pierres animées.
 
 ## Lancer
 
