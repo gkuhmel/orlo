@@ -22,7 +22,7 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 
 ## Version et cache
 
-- `VERSION` dans app.js (affichée en bas de l'accueil, « v6 ») et `?v=` sur les scripts et la feuille de style dans index.html : **les incrémenter ensemble à chaque mise en ligne**, pour que Safari ne garde pas d'anciens fichiers.
+- `VERSION` dans app.js (affichée en bas de l'accueil, « v7 ») et `?v=` sur les scripts et la feuille de style dans index.html : **les incrémenter ensemble à chaque mise en ligne**, pour que Safari ne garde pas d'anciens fichiers.
 - `_headers` (Cloudflare) : `Cache-Control: no-cache` sur tout le site.
 
 ## Moteur (engine.js)
@@ -42,7 +42,7 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
 - Sur mobile : toucher = aperçu (chevrons, halo rouge, gouttière allumée là où une pierre sortirait, anneau champagne qui respire = « retouche pour jouer ») ; glisser le doigt = l'aperçu suit ; retoucher la même intersection = jouer. Souris : survol = aperçu, clic = jouer.
 - Entrée gérée sur `pointerdown`/`pointerup`, jamais sur `click`. Tout appareil sans survol (`hover:hover and pointer:fine` faux, donc tout iPhone) exige deux touchers, quel que soit le `pointerType` annoncé : on ne s'y fie pas (sur iPhone Safari, `click` se déclare `mouse` même au doigt). Plateau en `touch-action: none`.
-- Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
+- Écran de jeu : **le plateau d'abord**, sur toute la largeur. Autour, le strict minimum en deux bandeaux d'une ligne : en haut retour · adversaire (pierre, nom, points quand il réfléchit, sorties en 5 alvéoles + « n/5 », rouges « ● n ») · réglages ; en bas ton bandeau (pierre, « Toi », sorties) · bouton des rouges (« ● n », appuyé = la prochaine pierre posée est rouge) · annuler. Le tour en cours = bandeau cerclé de champagne. Règles accessibles depuis la feuille Réglages. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
 - Direction visuelle **épurée et classe, numérique assumée** : pas d'imitation de matière (ni tissu, ni bois, ni coutures, ni cuir — essais abandonnés : bleu guède jugé froid, puis artisanal jugé « faux numérique »). Fond noir chaud uni (#121110), surfaces mates, filets d'un pixel, un seul accent champagne (#d4b483), rouge #e0564a, bouton principal plein ivoire. Typo unique Manrope ; logo en capitales légères très espacées. Vocabulaire : « plateau », « bord » (plus de « tissu »).
 - Plateaux (`THEMES` dans render.js, réglage « Plateau ») : sable (par défaut), ivoire, graphite (liseré clair sur les pierres noires).
 - Le plateau est un objet en trois niveaux : cadre sombre biseauté → gouttière en creux (= « le bord », où tombent les pierres ; filet champagne à sa lisière) → surface de jeu en relief, éclairée au centre. Quadrillage d'un pixel physique, cadre extérieur de la grille plus marqué, points repères.

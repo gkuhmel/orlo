@@ -6,7 +6,7 @@ var RM=matchMedia('(prefers-reduced-motion: reduce)');
 var HOVER=matchMedia('(hover:hover) and (pointer:fine)');
 /* Appareil tactile (iPhone, iPad sans souris…) : toujours deux touchers, quel que soit le pointerType annoncé. */
 function touchMode(ev){return !HOVER.matches||ev.pointerType==='touch'||ev.pointerType==='pen';}
-var VERSION='6';
+var VERSION='7';
 var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti',the:'L’Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon',the:'Le Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître'}};
 function opp(){return LEVELS[cfg.level].the;}
 /* % de victoires de Noir en simulation IA contre IA (voir CLAUDE.md) */
@@ -148,35 +148,30 @@ function AIc(){return 3-G.HC;}
 function fr(t){return String(t).replace(/ ([:;!?])/g,'\u202f$1');}
 function say(t){$('msg').textContent=fr(t);}
 function hint(h){$('hint').innerHTML=fr(h||'');}
-function idleHint(){hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu (glisse pour explorer). Retouche : tu joues.');}
+function idleHint(){if(G.mode==='red'){hint('<i class="st c3"></i> Pierre rouge : choisis où la poser.');return;}hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu. Retouche : tu joues.');}
 
-function cardHTML(){return '<span class="pc-state"></span><div class="pc-top"><span class="avatar"><i class="st"></i></span><div class="pc-id"><span class="pc-name"></span><span class="pc-sub"></span></div>'+
-  '<div class="pc-stats"><div class="pc-row" title="Pierres adverses sorties"><span class="tray"></span><span class="num ncap"></span></div>'+
-  '<div class="pc-row" title="Pierres rouges restantes"><span class="pouch"></span><span class="num red nred"></span></div></div></div>';}
+function cardHTML(){return '<span class="avatar"><i class="st"></i></span><span class="pc-name"></span><span class="pc-state"></span>'+
+  '<span class="pc-stats"><span class="tray" title="Pierres adverses sorties"></span><span class="num ncap"></span></span>'+
+  '<span class="pc-red" title="Pierres rouges restantes"><i class="st c3"></i><span class="nred"></span></span>';}
 $('cardAI').innerHTML=cardHTML();$('cardMe').innerHTML=cardHTML();
 
 function renderCard(card,player,isMe,popIdx){
   var opp=3-player,s=G.cur,q=function(sel){return card.querySelector(sel);};
   q('.avatar .st').className='st c'+player;
   q('.pc-name').textContent=isMe?'Toi':LEVELS[cfg.level].name;
-  q('.pc-sub').textContent=isMe?colorName(player)+(player===1?' · joue en premier':' · joue en second'):'Ordinateur · '+colorName(player);
+  card.title=isMe?'Toi · '+colorName(player):LEVELS[cfg.level].the+' · '+colorName(player);
   var got=Math.min(E.TARGET,G.shown[opp]),h='';
   for(var i=0;i<E.TARGET;i++)h+='<span class="hole'+(i===popIdx?' pop':'')+'">'+(i<got?'<i class="st c'+opp+'"></i>':'')+'</span>';
   q('.tray').innerHTML=h;
   q('.ncap').innerHTML=got+'<small>/'+E.TARGET+'</small>';
-  var match=!s.winner&&got===E.TARGET-1;
-  card.classList.toggle('match',match);
-  var sub=q('.pc-sub');sub.classList.toggle('hot',match);
-  if(match)sub.textContent='Plus qu’une sortie !';
-  var left=s.reds[player];
-  q('.pouch').innerHTML=G.REDS?Array.from({length:G.REDS},function(_,k){return '<i class="st c3'+(k>=left?' used':'')+'"></i>';}).join(''):'<span class="none">—</span>';
-  q('.nred').textContent=G.REDS?left:'';
+  card.classList.toggle('match',!s.winner&&got===E.TARGET-1);
+  q('.nred').textContent=s.reds[player];
+  card.classList.toggle('nored',!G.REDS);
   var turn=!s.winner&&s.toPlay===player,st=q('.pc-state');
-  card.classList.toggle('turn',turn);
+  card.classList.toggle('turn',turn&&!(isMe&&G.busy));
   card.classList.toggle('thinking',!isMe&&G.thinking);
-  if(s.winner===player){st.className='pc-state on win';st.textContent='Gagne';}
-  else if(turn&&isMe&&!G.busy){st.className='pc-state on go';st.textContent='À toi';}
-  else if(!isMe&&G.thinking){st.className='pc-state on think';st.innerHTML='Réfléchit<i></i><i></i><i></i>';}
+  if(s.winner===player){st.className='pc-state win';st.textContent='gagne';}
+  else if(!isMe&&G.thinking){st.className='pc-state think';st.innerHTML='<i></i><i></i><i></i>';}
   else{st.className='pc-state';st.textContent='';}
 }
 function renderHUD(pop){
@@ -184,17 +179,16 @@ function renderHUD(pop){
   renderCard($('cardAI'),AIc(),false,pop[AIc()]);
   renderCard($('cardMe'),G.HC,true,pop[G.HC]);
   var s=G.cur,over=!!s.winner,mine=!over&&s.toPlay===G.HC&&!G.busy&&!G.thinking;
-  $('modeStoneIc').className='st c'+G.HC;
-  $('modeStone').disabled=!mine;
   $('modeRed').disabled=!mine||s.reds[G.HC]<=0;
+  $('modeRed').hidden=!G.REDS;
   $('redLeft').textContent=s.reds[G.HC];
   if(s.reds[G.HC]<=0&&G.mode==='red')setMode('stone');
   $('undo').disabled=G.busy||G.thinking||!G.hist.some(function(h){return h.toPlay===G.HC;});
   $('gameBox').classList.toggle('wait',G.thinking);
 }
-function setMode(m){G.mode=m;$('modeStone').setAttribute('aria-pressed',m==='stone');$('modeRed').setAttribute('aria-pressed',m==='red');
-  if(gin&&gin.sel>=0)gPreview(gin.sel,!HOVER.matches);}
-$('modeStone').onclick=function(){setMode('stone');};
+function setMode(m){G.mode=m;$('modeRed').setAttribute('aria-pressed',m==='red');
+  if(gin&&gin.sel>=0)gPreview(gin.sel,!HOVER.matches);
+  else if(canPlay())idleHint();}
 $('modeRed').onclick=function(){setMode(G.mode==='red'?'stone':'red');};
 
 /* trajectoire des pierres sorties vers la bonne réserve */
@@ -220,7 +214,7 @@ function gPreview(p,armed){
     if(mine)parts.push('<span class="warn">perd '+stones(G.HC,mine)+'</span>');
     if(!out.length)parts.push(tr.length?'Pousse '+plural(tr.length,'pierre'):'Aucune poussée');
     if(bl.length)parts.push('<span class="warn">bloqué par une rouge</span>');}
-  hint(parts.join(' · ')+'<br><span class="tap">'+(armed?'retouche la pierre pour jouer':'clique pour jouer')+'</span>');
+  hint(parts.join(' · ')+'<br><span class="tap">'+(armed?'retouche pour jouer':'clique pour jouer')+'</span>');
 }
 var gin=attachInput(gb,{can:canPlay,valid:function(p){return !G.cur.b[p];},preview:gPreview,play:function(p){humanPlay(p);}});
 
@@ -308,7 +302,7 @@ $('undo').onclick=function(){
   var l=h.last;gb.reset(h.b,l<0?-1:l>=E.REDOFF?l-E.REDOFF:l);
   renderHUD();say('Coup annulé. À toi.');idleHint();};
 $('gHome').onclick=function(){go('home');};
-$('gRules').onclick=function(){openSheet('rulesSheet');};
+$('sRules').onclick=function(){openSheet('rulesSheet');};
 $('gSettings').onclick=function(){openSettings('game');};
 $('rTuto').onclick=function(){go('tuto');loadLesson(0);};
 
