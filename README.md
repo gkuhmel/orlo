@@ -30,3 +30,10 @@ npx serve .        # ou : python3 -m http.server
 node tools/selfplay.js 7 4 20     # équilibrage : taille, rouges, parties
 node tools/ladder.js 4 2 16       # compétence : profondeur A contre profondeur B
 ```
+
+## Déployer sur Cloudflare
+
+Site statique, aucune étape de build. `wrangler.jsonc` sert le dossier comme fichiers statiques ; `.assetsignore` exclut outils et documentation.
+
+- Build command : *(vide)*
+- Deploy command : `npx wrangler deploy`

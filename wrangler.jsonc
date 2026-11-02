@@ -1,0 +1,7 @@
+{
+  // Site statique : Cloudflare sert le dossier tel quel, sans code serveur.
+  // (worker.js est un Web Worker du navigateur, pas un Cloudflare Worker : pas de "main".)
+  "name": "orlo",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "." }
+}
