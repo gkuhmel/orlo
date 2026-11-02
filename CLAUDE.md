@@ -4,10 +4,21 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 
 ## Fichiers
 
-- `index.html` : interface (SVG, animations, aperçu du coup, réglages). Pas de build.
+- `index.html` : structure des écrans (ouverture, accueil, partie, tutoriel) et des feuilles (réglages, règles). Pas de build.
+- `style.css` : toute la direction visuelle de l'interface (cartes cousues, boutons, feuilles, animations CSS du splash).
+- `render.js` : rendu Canvas 2D. `OrloArt` dessine pierres et textures (aussi exportées en images CSS `--st1..3`, `--weave`) ; `OrloBoard` = un plateau animé (tissu tissé précalculé par taille, pierres en sprites, ombres, ondes, particules, aperçu, cibles, célébration).
+- `app.js` : interface et déroulé (écrans, partie contre Caudron, tutoriel en 6 leçons, réglages en `localStorage`). Expose `window.Orlo` en lecture seule (état courant) pour les tests.
 - `engine.js` : règles + IA, sans dépendance. Global `Engine` dans le navigateur, `require` sous Node.
 - `worker.js` : exécute `Engine.search` dans un Web Worker.
 - `tools/` : simulations Node (équilibrage, test de compétence).
+
+## Rendu et animations (render.js)
+
+- Le canvas déborde de sa boîte carrée (`bleed`) pour que les pierres sortantes et les ombres ne soient pas coupées. `cellAt(x,y)` / `client(i,j)` convertissent pointeur ↔ croisement.
+- `playMove(trace, p, color)` renvoie une promesse : chute de la pierre posée, onde, poussée en cascade (décalée selon la distance), sortie avec fibres et secousse. Si `onEject` est défini, la pierre sortie est confiée au DOM (elle vole jusqu'à la réserve du joueur qui marque) ; sinon elle tombe du tissu.
+- `setPreview({p,color,trace,blocked})` : pierre fantôme, chevrons dorés (poussée), halo et double chevron garance (sortie), barre garance (file bloquée par une rouge).
+- Respecte `prefers-reduced-motion` (durées raccourcies, moins de particules, pas de secousse).
+- La boucle `requestAnimationFrame` ne tourne que s'il y a quelque chose à animer.
 
 ## Moteur (engine.js)
 
@@ -24,7 +35,8 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Règles originales, pas un clone de go ni d'Abalone. Une règle centrale en une phrase : « ta pierre pousse tout ce qui la touche ».
 - Équilibre visé « façon échecs » : léger avantage du premier joueur, pas plus. On n'équilibre pas en changeant le nombre de pierres à sortir (trop brutal), mais par le nombre de rouges.
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
-- Sur mobile : premier toucher = aperçu (flèches, croix sur les pierres qui sortent), second toucher = jouer.
+- Sur mobile : premier toucher = aperçu (chevrons, halo garance sur les pierres qui sortent), second toucher = jouer.
+- Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
 - Direction visuelle : tissu bleu guède tissé, fils de lin, pierres en dégradé, rouge garance, typo IM Fell English + Alegreya Sans, thème sombre unique.
 
 ## Résultats de simulation (IA contre IA)
@@ -47,5 +59,5 @@ Parties : 35 à 45 coups entre IA fortes, première sortie vers le 10e coup, lim
 
 - Rouges « déviation » (une poussée qui bute sur une rouge tourne à 90°) ou « pivot » (faire tourner les pierres autour d'une rouge). À ne tester que si les rouges paraissent trop défensives.
 - Départage des égalités (ex. : plus de pierres sur le tissu).
-- Tutoriel interactif, PWA, sauvegarde de partie, mode 2 joueurs local, IA plus forte (table de transposition, killer moves).
+- PWA, sauvegarde de partie, mode 2 joueurs local, sons, IA plus forte (table de transposition, killer moves).
 - Nom : vérifier marques (EUIPO/USPTO classes 9 et 28), domaine et App Store.

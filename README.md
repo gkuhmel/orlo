@@ -13,6 +13,10 @@ Inspiré du jeu de pierres que Caudron apprend à Fitz dans *L'Assassin royal* d
 4. Chaque joueur a des **pierres rouges** (4 par défaut sur 7×7). Elles ne poussent pas, ne bougent jamais et bloquent toute file qui les contient. En poser une coûte le tour.
 5. Après 120 coups, ou si le tissu est plein, celui qui a perdu le moins de pierres gagne.
 
+## Interface
+
+Écran d'ouverture, accueil avec une partie de démonstration, tutoriel interactif en 6 leçons, partie contre Caudron (3 niveaux), réglages (taille, rouges, couleur) avec l'équilibre mesuré en simulation. Rendu Canvas : tissu de guède tissé, lignes en fil de lin brodé, ourlet cousu, pierres animées.
+
 ## Lancer
 
 Site statique sans build : servir le dossier (le Web Worker ne marche pas en `file://`, le jeu bascule alors sur le thread principal).
