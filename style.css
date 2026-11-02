@@ -10,11 +10,14 @@
   --madder:#b8382c;
   --madder-hi:#f08070;
   --stitch:rgba(248,228,192,.2);
-  --fd:"IM Fell English SC","Iowan Old Style",Georgia,serif;
-  --fi:"IM Fell English","Iowan Old Style",Georgia,serif;
-  --fb:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  --fd:"Fraunces","Iowan Old Style",Georgia,serif;
+  --fi:"Fraunces","Iowan Old Style",Georgia,serif;
+  --fb:"Figtree","Segoe UI",system-ui,sans-serif;
   color-scheme:dark;
 }
+/* Fraunces : version arrondie (SOFT) partout, italique pour les répliques */
+h1,h2,.btn.primary,.tb-title,.pc-name,.rn,.end-score,.logo{font-variation-settings:"SOFT" 100}
+
 *{box-sizing:border-box}
 html{background:var(--ground);-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100dvh;color:var(--ink);font-family:var(--fb);font-size:16px;line-height:1.45;
@@ -42,7 +45,7 @@ b.r{color:var(--madder-hi)}
 .col{width:100%;max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding:4px 16px 14px}
 
 /* ---------- logo & ornement ---------- */
-.logo{font-family:var(--fd);font-weight:400;font-size:clamp(4.4rem,26vw,7rem);line-height:.86;margin:0;letter-spacing:.03em;display:flex;justify-content:center;
+.logo{font-family:var(--fd);font-weight:700;font-variation-settings:"SOFT" 100,"opsz" 144;font-size:clamp(4.4rem,26vw,7rem);line-height:.9;margin:0;letter-spacing:-.01em;display:flex;justify-content:center;
   filter:drop-shadow(0 2px 0 rgba(0,0,0,.55)) drop-shadow(0 12px 26px rgba(0,0,0,.5))}
 .logo span{display:inline-block;background:linear-gradient(180deg,#fbf5e4 0%,#e3d7b7 50%,#a7966b 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .logo.sm{font-size:clamp(3.4rem,17vw,4.6rem)}
@@ -104,7 +107,7 @@ b.r{color:var(--madder-hi)}
 .btn:hover:not(:disabled){border-color:rgba(236,208,143,.55)}
 .btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .btn:disabled{opacity:.38;cursor:not-allowed}
-.btn.primary{color:#22190a;background:linear-gradient(180deg,#f0d798,#cfac62 55%,#a9853f);border-color:#f5e2b0;font-family:var(--fd);font-size:1.28rem;letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,244,210,.55);
+.btn.primary{color:#22190a;background:linear-gradient(180deg,#f0d798,#cfac62 55%,#a9853f);border-color:#f5e2b0;font-family:var(--fd);font-weight:650;font-size:1.25rem;letter-spacing:0;text-shadow:0 1px 0 rgba(255,244,210,.55);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 24px rgba(201,169,100,.22),0 6px 14px rgba(0,0,0,.4)}
 .btn.primary::after{border-color:rgba(70,48,12,.35)}
 .btn.big{min-height:60px;font-size:1.4rem}
@@ -116,7 +119,7 @@ b.r{color:var(--madder-hi)}
 
 /* ---------- barre du haut ---------- */
 .topbar{display:flex;align-items:center;gap:4px;height:44px;margin-bottom:-2px}
-.tb-title{flex:1;font-family:var(--fd);font-size:1.45rem;letter-spacing:.06em;color:#d9cfb3;text-align:center;margin-right:-42px}
+.tb-title{flex:1;font-family:var(--fd);font-weight:650;font-size:1.4rem;letter-spacing:.01em;color:#d9cfb3;text-align:center;margin-right:-42px}
 #game .tb-title{margin-right:0;margin-left:42px}
 .dots{display:flex;gap:6px;width:auto;padding-right:6px}
 .dots i{width:8px;height:8px;border-radius:50%;background:rgba(248,228,192,.18);transition:background .3s,transform .3s}
@@ -136,7 +139,7 @@ b.r{color:var(--madder-hi)}
 .pcard.thinking .avatar .st{animation:breathe 1.3s ease-in-out infinite}
 @keyframes breathe{50%{transform:scale(1.1) rotate(8deg)}}
 .pc-id{display:flex;flex-direction:column;min-width:0;flex:1}
-.pc-name{font-family:var(--fd);font-size:1.32rem;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-name{font-family:var(--fd);font-weight:650;font-size:1.32rem;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc-sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc-sub.hot{color:var(--brass-hi);font-weight:700}
 .pc-state{position:absolute;top:-11px;right:16px;z-index:2;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:999px;white-space:nowrap;opacity:0;transform:translateY(4px) scale(.9);transition:opacity .25s,transform .25s}
@@ -217,7 +220,7 @@ b.r{color:var(--madder-hi)}
 .endcard::before{content:"";position:absolute;inset:5px;border:1px dashed rgba(236,208,143,.3);border-radius:17px;pointer-events:none}
 @keyframes endIn{from{opacity:0;transform:translate(-50%,-44%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%)}}
 .end-k{margin:0;font-size:.72rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
-.endcard h2{font-family:var(--fd);font-weight:400;font-size:2.8rem;line-height:1;margin:2px 0 6px;color:var(--brass-hi);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.endcard h2{font-family:var(--fd);font-weight:700;font-size:2.8rem;line-height:1;margin:2px 0 6px;color:var(--brass-hi);text-shadow:0 2px 0 rgba(0,0,0,.5)}
 .endcard.lose h2{color:#e8b1a7}
 .end-score{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.9rem;font-variant-numeric:tabular-nums}
 .end-score .st{width:30px;height:30px}
@@ -235,7 +238,7 @@ b.r{color:var(--madder-hi)}
 .lesson.nudge{animation:nudge .4s}
 @keyframes nudge{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
 .lk{margin:0;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
-.lesson h2{font-family:var(--fd);font-weight:400;font-size:1.65rem;line-height:1.1;margin:2px 0 6px}
+.lesson h2{font-family:var(--fd);font-weight:650;font-size:1.65rem;line-height:1.1;margin:2px 0 6px}
 .lesson p#lText{margin:0;color:#ead9bd;font-size:1.02rem}
 .lesson p#lText em{color:var(--muted);font-size:.92rem}
 .lesson .st{width:16px;height:16px;vertical-align:-3px}
@@ -259,7 +262,7 @@ b.r{color:var(--madder-hi)}
   transform:translateY(105%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.3,1),visibility 0s .38s}
 .sheet.on{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.2,.9,.3,1),visibility 0s}
 .grip{width:44px;height:5px;border-radius:3px;background:rgba(248,228,192,.25);margin:4px auto 10px}
-.sheet h2{font-family:var(--fd);font-weight:400;font-size:1.8rem;margin:0 0 10px}
+.sheet h2{font-family:var(--fd);font-weight:650;font-size:1.8rem;margin:0 0 10px}
 .field{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
 .flabel{font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .opts{display:flex;gap:5px}
@@ -288,7 +291,7 @@ b.r{color:var(--madder-hi)}
 .rules li{display:flex;gap:12px;align-items:flex-start}
 .rules p{margin:0;color:#ead9bd}
 .rules .st{width:16px;height:16px;vertical-align:-3px}
-.rn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--fd);font-size:1.05rem;color:#22190a;background:linear-gradient(180deg,#f0d798,#b99447)}
+.rn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:1.05rem;color:#22190a;background:linear-gradient(180deg,#f0d798,#b99447)}
 
 /* pierre volante (sortie → réserve) */
 .flyer{position:fixed;left:0;top:0;z-index:40;pointer-events:none;will-change:transform;filter:drop-shadow(2px 8px 6px rgba(0,0,0,.55))}

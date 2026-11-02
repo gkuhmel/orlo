@@ -37,7 +37,7 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Le joueur humain joue Blanc par défaut ; couleur, taille (5 à 9) et nombre de rouges (0 à 8) réglables.
 - Sur mobile : premier toucher = aperçu (chevrons, halo garance sur les pierres qui sortent), second toucher = jouer.
 - Lisibilité des compteurs : chaque carte joueur montre ses sorties comme des pierres adverses dans 5 alvéoles (+ « n/5 ») et ses rouges restantes. Adversaire en haut, joueur en bas, comme aux échecs en ligne.
-- Direction visuelle **chaleureuse** (le bleu guède a été jugé trop froid) : tissu teint et tissé posé sur une table en noyer éclairée par une lampe, fils brodés, ourlet cousu, cartes et boutons en cuir surpiqué, accents laiton et garance, pierres en dégradé, typo IM Fell English + Alegreya Sans, ambiance sombre unique.
+- Direction visuelle **chaleureuse** (le bleu guède a été jugé trop froid) : tissu teint et tissé posé sur une table en noyer éclairée par une lampe, fils brodés, ourlet cousu, cartes et boutons en cuir surpiqué, accents laiton et garance, pierres en dégradé, typo Fraunces arrondie (axe SOFT, titres et répliques en italique) + Figtree (texte, chiffres) — IM Fell English abandonnée, trop proche des jeux à thème légendaire, ambiance sombre unique.
 - Teintures du tissu (`THEMES` dans render.js, réglage « Teinture du tissu ») : safran (par défaut), lin naturel (fils rouille), olive (fils crème).
 - Aucune référence à une œuvre existante (pas de personnage nommé) : l'adversaire est désigné par son niveau (« le Compagnon réfléchit… »).
 

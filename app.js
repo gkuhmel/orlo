@@ -123,7 +123,7 @@ function AIc(){return 3-G.HC;}
 function fr(t){return String(t).replace(/ ([:;!?])/g,'\u202f$1');}
 function say(t){$('msg').textContent=fr(t);}
 function hint(h){$('hint').innerHTML=fr(h||'');}
-function idleHint(){hint(HOVER.matches?'Survole un croisement : aperçu. Clique : tu joues.':'Touche un croisement : aperçu. Touche encore : tu joues.');}
+function idleHint(){hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu. Retouche : tu joues.');}
 
 function cardHTML(){return '<span class="pc-state"></span><div class="pc-top"><span class="avatar"><i class="st"></i></span><div class="pc-id"><span class="pc-name"></span><span class="pc-sub"></span></div>'+
   '<div class="pc-stats"><div class="pc-row" title="Pierres adverses sorties"><span class="tray"></span><span class="num ncap"></span></div>'+
