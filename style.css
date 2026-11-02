@@ -277,12 +277,15 @@ b.r{color:var(--red-soft)}
 .gbar{display:flex;align-items:center;gap:4px;height:44px;flex:none}
 .gbar .icon{width:40px;height:40px;flex:none}
 .gbar .icon:disabled{opacity:.3;cursor:not-allowed}
-.strip{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:40px;padding:0 10px;border-radius:12px;border:1px solid transparent;transition:border-color .3s,background .3s}
+.strip{flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:50px;padding:0 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);transition:border-color .3s,background .3s;flex-shrink:0}
 .strip.turn{border-color:rgba(212,180,131,.45);background:rgba(212,180,131,.06)}
-.strip .avatar{width:20px;height:20px}
-.strip .avatar .st{width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.strip .avatar{width:26px;height:26px}
+.strip .avatar .st{width:26px;height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.pc-who{display:flex;flex-direction:column;min-width:0;flex:1 1 auto;line-height:1.2}
+.pc-line{display:flex;align-items:center;gap:6px;min-width:0}
+.strip .pc-sub{font-size:.72rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .strip.thinking .avatar .st{animation:breathe 1.4s ease-in-out infinite}
-.strip .pc-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.strip .pc-name{font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .strip.turn .pc-name{color:var(--accent)}
 .strip .pc-state{position:static;opacity:1;transform:none;padding:0;border:0;background:none;box-shadow:none;letter-spacing:.04em;text-transform:none;font-size:.74rem;font-weight:600;color:var(--muted);flex:none}
 .strip .pc-state.win{color:var(--accent)}
@@ -297,11 +300,11 @@ b.r{color:var(--red-soft)}
 .pc-red{display:flex;align-items:center;gap:4px;font-size:.86rem;font-weight:700;color:var(--red-soft);flex:none;padding-left:4px}
 .pc-red .st{width:11px;height:11px}
 .strip.me .pc-red,.strip.nored .pc-red{display:none}
-.redbtn{height:40px;min-width:58px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;border-radius:12px;border:1px solid var(--line-2);background:transparent;color:var(--red-soft);font-weight:700;font-size:.9rem;cursor:pointer;flex:none;transition:background .2s,border-color .2s,color .2s}
+.redbtn{height:50px;min-width:58px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;border-radius:12px;border:1px solid var(--line-2);background:transparent;color:var(--red-soft);font-weight:700;font-size:.9rem;cursor:pointer;flex:none;transition:background .2s,border-color .2s,color .2s}
 .redbtn .st{width:16px;height:16px}
 .redbtn[aria-pressed=true]{background:rgba(224,86,74,.18);border-color:rgba(224,86,74,.7);color:#fff}
 .redbtn:disabled{opacity:.3;cursor:not-allowed}
-#gameWrap{width:min(100%,calc(100dvh - 168px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));min-width:240px;margin:2px auto}
+#gameWrap{width:min(100%,calc(100dvh - 222px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));min-width:240px;margin:2px auto}
 .gamecol .status{height:40px;flex:none}
 .gamecol #msg{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gamecol #hint{font-size:.8rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -310,3 +313,41 @@ b.r{color:var(--red-soft)}
 @media (max-width:360px){.strip{gap:6px;padding:0 6px}.strip .hole,.strip .hole .st{width:12px;height:12px}}
 .sheet-x{position:absolute;top:10px;right:10px}
 .sheet{position:fixed}
+
+.gamecol>.topbar{height:40px}
+.gbar.me{height:52px}
+.gbar.me .icon{width:44px;height:50px}
+
+/* ---------- analyse ---------- */
+.anacol{gap:10px;padding-bottom:20px}
+.ana-prog{display:flex;flex-direction:column;gap:6px;font-size:.78rem;color:var(--muted)}
+.ana-prog i{display:block;height:2px;background:var(--line);border-radius:1px;overflow:hidden}
+.ana-prog b{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.ana-sum{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.ana-row{display:flex;align-items:center;gap:8px;height:28px;font-size:.9rem}
+.ana-row .st{width:16px;height:16px}
+.ana-row b{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ana-row .acc{font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);margin-left:4px}
+.ana-cnt{margin-left:auto;display:flex;gap:12px;font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums}
+.ana-graph{width:100%;height:64px;border-radius:12px;border:1px solid var(--line);display:block;cursor:pointer;touch-action:none}
+#anaWrap{width:min(100%,max(260px,calc(100dvh - 400px)));margin:0 auto}
+.ana-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-height:104px}
+.ana-h{margin:0;display:flex;align-items:center;gap:7px;font-weight:700;font-size:.95rem;flex-wrap:wrap}
+.ana-h .mv{color:var(--dim);font-variant-numeric:tabular-nums}
+.ana-h .st{width:15px;height:15px}
+.badge-cls{margin-left:auto;font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--c);box-shadow:inset 0 0 0 1px var(--c);white-space:nowrap}
+.badge-cls.wait{--c:var(--dim)}
+.ana-t{margin:8px 0 0;font-size:.9rem;color:#cfc9c0;line-height:1.45}
+.ana-t.end{color:var(--accent);font-weight:600}
+.ana-e{margin:6px 0 0;font-size:.76rem;color:var(--dim);font-variant-numeric:tabular-nums}
+.ana-card .linkbtn{margin-top:8px;font-size:.88rem;color:var(--accent);text-decoration-color:rgba(212,180,131,.4)}
+.ana-ctrl{display:flex;align-items:center;gap:4px}
+.ana-ctrl .icon:disabled{opacity:.25;cursor:default}
+.btn.key{flex:1;min-height:44px;font-size:.9rem;white-space:nowrap;padding-inline:10px}
+.ana-moves{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ana-moves::-webkit-scrollbar{display:none}
+.mvchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer}
+.mvchip .d{width:7px;height:7px;border-radius:50%}
+.mvchip .st{width:10px;height:10px}
+.mvchip.on{color:var(--ink);border-color:var(--line-2);background:var(--surface-2)}
+.gamecol>.strip{flex:none}

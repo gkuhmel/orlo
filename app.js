@@ -6,7 +6,7 @@ var RM=matchMedia('(prefers-reduced-motion: reduce)');
 var HOVER=matchMedia('(hover:hover) and (pointer:fine)');
 /* Appareil tactile (iPhone, iPad sans souris…) : toujours deux touchers, quel que soit le pointerType annoncé. */
 function touchMode(ev){return !HOVER.matches||ev.pointerType==='touch'||ev.pointerType==='pen';}
-var VERSION='7';
+var VERSION='8';
 var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti',the:'L’Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon',the:'Le Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître'}};
 function opp(){return LEVELS[cfg.level].the;}
 /* % de victoires de Noir en simulation IA contre IA (voir CLAUDE.md) */
@@ -150,7 +150,7 @@ function say(t){$('msg').textContent=fr(t);}
 function hint(h){$('hint').innerHTML=fr(h||'');}
 function idleHint(){if(G.mode==='red'){hint('<i class="st c3"></i> Pierre rouge : choisis où la poser.');return;}hint(HOVER.matches?'Survole : aperçu. Clique : tu joues.':'Touche : aperçu. Retouche : tu joues.');}
 
-function cardHTML(){return '<span class="avatar"><i class="st"></i></span><span class="pc-name"></span><span class="pc-state"></span>'+
+function cardHTML(){return '<span class="avatar"><i class="st"></i></span><span class="pc-who"><span class="pc-line"><span class="pc-name"></span><span class="pc-state"></span></span><span class="pc-sub"></span></span>'+
   '<span class="pc-stats"><span class="tray" title="Pierres adverses sorties"></span><span class="num ncap"></span></span>'+
   '<span class="pc-red" title="Pierres rouges restantes"><i class="st c3"></i><span class="nred"></span></span>';}
 $('cardAI').innerHTML=cardHTML();$('cardMe').innerHTML=cardHTML();
@@ -159,7 +159,7 @@ function renderCard(card,player,isMe,popIdx){
   var opp=3-player,s=G.cur,q=function(sel){return card.querySelector(sel);};
   q('.avatar .st').className='st c'+player;
   q('.pc-name').textContent=isMe?'Toi':LEVELS[cfg.level].name;
-  card.title=isMe?'Toi · '+colorName(player):LEVELS[cfg.level].the+' · '+colorName(player);
+  q('.pc-sub').textContent=isMe?colorName(player)+(player===1?' · 1er':' · 2e'):'Ordinateur · '+colorName(player);
   var got=Math.min(E.TARGET,G.shown[opp]),h='';
   for(var i=0;i<E.TARGET;i++)h+='<span class="hole'+(i===popIdx?' pop':'')+'">'+(i<got?'<i class="st c'+opp+'"></i>':'')+'</span>';
   q('.tray').innerHTML=h;
@@ -272,8 +272,8 @@ function onAI(r){
 function endGame(){
   var w=G.cur.winner,HC=G.HC,AI=AIc(),card=$('endCard');
   say(w===HC?'Tu gagnes !':w===3?'Égalité parfaite.':opp()+' gagne cette fois.');
-  hint('<button class="linkbtn" id="hAgain">Rejouer</button> · <button class="linkbtn" id="hRes">Voir le résultat</button>');
-  $('hAgain').onclick=newGame;$('hRes').onclick=function(){card.hidden=false;};
+  hint('<button class="linkbtn" id="hAgain">Rejouer</button> · <button class="linkbtn" id="hAna">Analyser la partie</button>');
+  $('hAgain').onclick=newGame;$('hAna').onclick=startAnalysis;
   gb.celebrate(w===3?0:w);
   $('endTitle').textContent=w===HC?'Victoire':w===3?'Égalité':'Défaite';
   card.classList.toggle('lose',w!==HC&&w!==3);
@@ -282,7 +282,7 @@ function endGame(){
   setTimeout(function(){if(G.cur.winner&&current==='game')card.hidden=false;},RM.matches?200:1300);
 }
 $('eAgain').onclick=function(){newGame();};
-$('eView').onclick=function(){$('endCard').hidden=true;};
+$('eAna').onclick=startAnalysis;
 
 function newGame(){
   G.gid++;if(G.thinking&&worker){worker.terminate();worker=makeWorker();}
@@ -305,6 +305,145 @@ $('gHome').onclick=function(){go('home');};
 $('sRules').onclick=function(){openSheet('rulesSheet');};
 $('gSettings').onclick=function(){openSettings('game');};
 $('rTuto').onclick=function(){go('tuto');loadLesson(0);};
+
+/* ================= analyse de partie ================= */
+var ab=new OrloBoard(document.querySelector('#anaBox canvas'),{n:7});
+var CLS={best:{t:'Meilleur coup',s:'★',c:'#d4b483'},good:{t:'Bon coup',s:'✓',c:'#9fb08f'},inacc:{t:'Imprécision',s:'?!',c:'#e2c15a'},
+  mistake:{t:'Erreur',s:'?',c:'#ec9550'},blunder:{t:'Gaffe',s:'??',c:'#e0564a'}};
+var CLS_ORDER=['best','good','inacc','mistake','blunder'];
+var A=null,anaWorker=null,anaGid=0;
+function capS(v){return Math.max(-6000,Math.min(6000,v));}
+function classify(L){return L<=15?'best':L<120?'good':L<400?'inacc':L<1500?'mistake':'blunder';}
+function noteOf(N,m){var p=m>=E.REDOFF?m-E.REDOFF:m;return 'ABCDEFGHI'[p%N]+(N-((p/N)|0));}
+function stoneTxt(v){var x=Math.round(v/100)/10;return (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1).replace('.',',');}
+function ser(st){return{b:Array.from(st.b),toPlay:st.toPlay,reds:st.reds.slice(),lost:st.lost.slice(),moves:st.moves,winner:st.winner,last:st.last};}
+function outs(st,m,color){E.configure(A.N);var t=E.clone(st),tr=[];if(!E.play(t,m,tr))return 0;
+  return tr.filter(function(x){return x[1]<0&&st.b[x[0]]===color;}).length;}
+
+function startAnalysis(){
+  var P=G.hist.concat([G.cur]);if(P.length<2)return;
+  anaGid++;if(anaWorker){anaWorker.terminate();anaWorker=null;}
+  A={P:P,N:G.N,HC:G.HC,who:LEVELS[cfg.level].name,res:new Array(P.length-1),done:0,k:P.length-1,showBest:false,gid:anaGid};
+  go('ana');ab.setN(A.N);anaShow(A.k,false);
+  $('aProg').hidden=false;anaRun(0);
+}
+function anaRun(i){
+  if(!A||A.gid!==anaGid)return;
+  if(i>=A.P.length-1){$('aProg').hidden=true;anaRender();return;}
+  var st=A.P[i],played=A.P[i+1].last,gid=A.gid;
+  var done=function(a){if(!A||A.gid!==gid)return;A.res[i]=a;A.done=i+1;anaRender();anaRun(i+1);};
+  if(!anaWorker){try{anaWorker=new Worker('worker.js?v='+VERSION);}catch(e){anaWorker=null;}}
+  if(anaWorker){anaWorker.onmessage=function(e){if(e.data.type==='analyze'&&e.data.gid===gid&&e.data.id===i)done(e.data);};
+    anaWorker.postMessage({type:'analyze',state:ser(st),played:played,depth:4,n:A.N,id:i,gid:gid});}
+  else setTimeout(function(){E.configure(A.N);var a=E.analyze(E.clone(st),played,{depth:3});done(a);},10);
+}
+/* infos dérivées d'un coup i (de P[i] à P[i+1]) */
+function anaMove(i){
+  var r=A.res[i];if(!r)return null;
+  var st=A.P[i],m=A.P[i+1].last,mover=st.toPlay,me=mover===A.HC;
+  var L=Math.max(0,capS(r.bestScore)-capS(r.playedScore)),cls=classify(L);
+  var sgn=me?1:-1;
+  return{i:i,m:m,mover:mover,me:me,L:L,cls:cls,best:r.best,
+    before:sgn*capS(r.bestScore),after:sgn*capS(r.playedScore),
+    acc:100*Math.exp(-L/900),gain:outs(st,m,3-mover),selfOut:outs(st,m,mover)};
+}
+function anaExplain(x){
+  var who=x.me?'Tu':'Il',poss=x.me?'tes':'ses',N=A.N,t=[];
+  if(x.cls==='best'||x.cls==='good'){
+    if(x.gain)t.push((x.me?'Tu sors ':'Il sort ')+plural(x.gain,'pierre')+'.');
+    t.push(x.cls==='best'?'C’était le meilleur coup.':'Coup solide, proche du meilleur.');
+  }else{
+    var nx=A.res[x.i+1];
+    if(nx&&nx.best!=null&&!A.P[x.i+1].winner){var k=outs(A.P[x.i+1],nx.best,x.mover);
+      if(k)t.push('Ce coup permet à l’adversaire de sortir '+(k>1?k+' de '+poss+' pierres':'une de '+poss+' pierres')+' (réponse '+noteOf(N,nx.best)+').');}
+    if(x.selfOut)t.push((x.me?'Tu sors ':'Il sort ')+(x.selfOut>1?x.selfOut+' de '+poss+' propres pierres':'une de '+poss+' propres pierres')+'.');
+    if(x.best!=null&&x.best!==x.m){var g=outs(A.P[x.i],x.best,3-x.mover);
+      t.push('Meilleur : '+noteOf(N,x.best)+(x.best>=E.REDOFF?' (rouge)':'')+(g?', qui sortait '+plural(g,'pierre'):'')+'.');}
+  }
+  return t.join(' ');
+}
+function anaShow(k,animate){
+  if(!A)return;k=Math.max(0,Math.min(A.P.length-1,k));
+  var prev=A.k;A.k=k;A.showBest=false;ab.setPreview(null);
+  if(animate&&k===prev+1){var st=A.P[prev],m=A.P[k].last,t=E.clone(st),tr=[];E.configure(A.N);E.play(t,m,tr);
+    ab.reset(st.b,st.last<0?-1:st.last%E.REDOFF);var p=m>=E.REDOFF?m-E.REDOFF:m;ab.playMove(tr,p,t.b[p]);}
+  else{var l=A.P[k].last;ab.reset(A.P[k].b,k&&l>=0?(l>=E.REDOFF?l-E.REDOFF:l):-1);}
+  anaRender();
+}
+function anaToggleBest(){
+  var x=A.k>0&&anaMove(A.k-1);if(!x||x.best==null)return;
+  A.showBest=!A.showBest;
+  if(A.showBest){var st=A.P[x.i];E.configure(A.N);ab.reset(st.b,-1);var t=E.clone(st),tr=[];E.play(t,x.best,tr);
+    var p=x.best>=E.REDOFF?x.best-E.REDOFF:x.best;ab.setPreview({p:p,color:x.best>=E.REDOFF?3:x.mover,trace:tr,blocked:[]});}
+  else{ab.setPreview(null);var l=A.P[A.k].last;ab.reset(A.P[A.k].b,l>=E.REDOFF?l-E.REDOFF:l);}
+  anaRender();
+}
+function anaRender(){
+  if(!A)return;
+  var n=A.P.length-1,moves=[],i;
+  for(i=0;i<n;i++)moves.push(anaMove(i));
+  $('aProgTxt').textContent='Analyse en cours… '+A.done+' / '+n;
+  $('aProgBar').style.width=(100*A.done/n)+'%';
+  /* résumé : précision et décompte par joueur */
+  var sum='';
+  [A.HC,3-A.HC].forEach(function(pl){
+    var ms=moves.filter(function(x){return x&&x.mover===pl;}),acc=ms.length?Math.round(ms.reduce(function(a,x){return a+x.acc;},0)/ms.length):null,cnt={};
+    ms.forEach(function(x){cnt[x.cls]=(cnt[x.cls]||0)+1;});
+    sum+='<div class="ana-row"><i class="st c'+pl+'"></i><b>'+(pl===A.HC?'Toi':A.who)+'</b><span class="acc">'+(acc==null?'…':acc+' %')+'</span><span class="ana-cnt">'+
+      CLS_ORDER.slice(2).map(function(c){return '<span style="color:'+CLS[c].c+'" title="'+CLS[c].t+'">'+CLS[c].s+' '+(cnt[c]||0)+'</span>';}).join('')+'</span></div>';});
+  $('aSum').innerHTML=sum;
+  anaGraph(moves);
+  /* commentaire du coup courant */
+  var k=A.k,card='';
+  if(k===0)card='<p class="ana-h">Position de départ</p><p class="ana-t">Avance coup par coup, ou saute au moment clé suivant.</p>';
+  else{var x=moves[k-1],m=A.P[k].last,isRed=m>=E.REDOFF;
+    card='<p class="ana-h"><span class="mv">'+k+'.</span><i class="st c'+(isRed?3:A.P[k-1].toPlay)+'"></i>'+(A.P[k-1].toPlay===A.HC?'Toi':A.who)+' · '+noteOf(A.N,m)+
+      (x?'<span class="badge-cls" style="--c:'+CLS[x.cls].c+'">'+CLS[x.cls].s+' '+CLS[x.cls].t+'</span>':'<span class="badge-cls wait">analyse…</span>')+'</p>';
+    if(x){card+='<p class="ana-t">'+fr(anaExplain(x))+'</p><p class="ana-e">Ton avantage (en pierres) : '+stoneTxt(x.before)+' → '+stoneTxt(x.after)+'</p>';
+      if(x.best!=null&&x.best!==x.m&&CLS_ORDER.indexOf(x.cls)>=2)card+='<button class="linkbtn" id="aBest">'+(A.showBest?'Revenir au coup joué':'Montrer le meilleur coup')+'</button>';}}
+  if(k===n&&A.P[n].winner){var w=A.P[n].winner;card+='<p class="ana-t end">'+(w===A.HC?'Victoire.':w===3?'Égalité.':'Défaite.')+'</p>';}
+  $('aCard').innerHTML=card;if($('aBest'))$('aBest').onclick=anaToggleBest;
+  /* liste des coups */
+  var h='';
+  for(i=0;i<n;i++){var y=moves[i],mm=A.P[i+1].last;
+    h+='<button class="mvchip'+(i+1===k?' on':'')+'" data-k="'+(i+1)+'"><span class="d" style="background:'+(y?CLS[y.cls].c:'var(--line-2)')+'"></span>'+(i+1)+'. '+noteOf(A.N,mm)+(mm>=E.REDOFF?'<i class="st c3"></i>':'')+'</button>';}
+  var box=$('aMoves');box.innerHTML=h;
+  var on=box.querySelector('.on');if(on)box.scrollLeft=on.offsetLeft-box.clientWidth/2+on.offsetWidth/2;
+  $('aPrev').disabled=k===0;$('aFirst').disabled=k===0;$('aNext').disabled=k===n;$('aLast').disabled=k===n;
+}
+function anaGraph(moves){
+  var cv=$('aGraph'),dpr=Math.min(3,devicePixelRatio||1),W=cv.clientWidth,H=cv.clientHeight;if(!W)return;
+  cv.width=W*dpr;cv.height=H*dpr;var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  var n=A.P.length-1,vals=[],i;
+  vals.push(moves[0]?moves[0].before:0);
+  for(i=0;i<n;i++)vals.push(moves[i]?moves[i].after:null);
+  var X=function(k){return 6+(W-12)*k/Math.max(1,n);},Y=function(v){return H/2-Math.tanh(v/2500)*(H/2-4);};
+  c.fillStyle='#1b1a18';c.fillRect(0,0,W,H);
+  c.beginPath();c.moveTo(X(0),H);var last=0;
+  for(i=0;i<=n;i++){if(vals[i]==null)break;c.lineTo(X(i),Y(vals[i]));last=i;}
+  c.lineTo(X(last),H);c.closePath();c.fillStyle='rgba(243,239,232,.85)';c.fill();
+  c.fillStyle='rgba(243,239,232,.85)';
+  c.strokeStyle='rgba(255,248,236,.15)';c.lineWidth=1;c.beginPath();c.moveTo(0,H/2+.5);c.lineTo(W,H/2+.5);c.stroke();
+  moves.forEach(function(x,j){if(!x||CLS_ORDER.indexOf(x.cls)<2)return;
+    c.beginPath();c.arc(X(j+1),Y(x.after),x.me?3.6:2.6,0,7);c.fillStyle=CLS[x.cls].c;c.fill();
+    if(x.me){c.lineWidth=1.2;c.strokeStyle='#121110';c.stroke();}});
+  c.strokeStyle='#d4b483';c.lineWidth=1.5;c.beginPath();c.moveTo(X(A.k),0);c.lineTo(X(A.k),H);c.stroke();
+}
+$('aGraph').addEventListener('pointerdown',function(ev){if(!A)return;var r=this.getBoundingClientRect(),n=A.P.length-1;
+  anaShow(Math.round((ev.clientX-r.left-6)/(r.width-12)*n),false);});
+$('aMoves').addEventListener('click',function(ev){var b=ev.target.closest('.mvchip');if(b)anaShow(+b.dataset.k,false);});
+$('aPrev').onclick=function(){anaShow(A.k-1,false);};
+$('aNext').onclick=function(){anaShow(A.k+1,true);};
+$('aFirst').onclick=function(){anaShow(0,false);};
+$('aLast').onclick=function(){anaShow(A.P.length-1,false);};
+$('aKey').onclick=function(){
+  var n=A.P.length-1;
+  /* d'abord tes erreurs, puis les erreurs adverses et les sorties de pierres */
+  var tests=[function(x){return x.me&&CLS_ORDER.indexOf(x.cls)>=2;},function(x){return CLS_ORDER.indexOf(x.cls)>=2||x.gain;}];
+  for(var t=0;t<2;t++)for(var k=A.k+1;k<=n;k++){var x=anaMove(k-1);if(x&&tests[t](x)){anaShow(k,false);return;}}
+  anaShow(n,false);};
+$('aBack').onclick=function(){go('game');$('endCard').hidden=true;};
+window.addEventListener('resize',function(){if(current==='ana')anaRender();});
 
 /* ================= réglages ================= */
 var setFrom='home';
@@ -412,7 +551,7 @@ $('tRetry').onclick=function(){loadLesson(T.i);};
 $('tBack').onclick=function(){go('home');};
 
 /* ================= départ ================= */
-window.Orlo={get state(){return G.cur;},get N(){return G.N;},get color(){return G.HC;}};
+window.Orlo={get analysis(){return A;},get state(){return G.cur;},get N(){return G.N;},get color(){return G.HC;}};
 eng();G.cur=E.newState(G.REDS);syncShown();renderHUD();
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&current==='home')demoTick(600);});
 })();

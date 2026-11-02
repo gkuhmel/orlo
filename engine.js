@@ -89,6 +89,18 @@ function search(s,opts){
   }catch(e){if(e!==STOP)throw e;}
   return{move:bestM,score:bestV,depth:depthDone,nodes:nodes};}
 
-return{get N(){return N;},get NN(){return NN;},configure:configure,REDOFF:REDOFF,TARGET:TARGET,MAXMOVES:MAXMOVES,newState:newState,clone:clone,play:play,search:search};
+/* Analyse d'un coup joué, à profondeur fixe (pas de limite de temps, sauf filet opts.ms) :
+   meilleur coup + sa valeur, valeur exacte du coup joué au même horizon. Scores du point de vue du joueur au trait. */
+function analyze(s,played,opts){
+  var depth=opts.depth||4;nodes=0;deadline=Date.now()+(opts.ms||20000);
+  var best=null,bestV=-Infinity,pv=null;
+  try{
+    var r=search(s,{ms:opts.ms||20000,maxDepth:depth});best=r.move;bestV=r.score;
+    deadline=Date.now()+(opts.ms||20000);
+    if(played!=null){var t=clone(s);play(t,played);pv=t.winner?-terminalScore(t,1):-negamax(t,depth-1,-Infinity,Infinity,1);}
+  }catch(e){if(e!==STOP)throw e;}
+  if(pv!=null&&pv>bestV){bestV=pv;best=played;}
+  return{best:best,bestScore:bestV,playedScore:pv};}
+return{get N(){return N;},get NN(){return NN;},configure:configure,REDOFF:REDOFF,TARGET:TARGET,MAXMOVES:MAXMOVES,newState:newState,clone:clone,play:play,search:search,analyze:analyze,WIN:WIN};
 })();
 if(typeof module!=="undefined"&&module.exports)module.exports=Engine;

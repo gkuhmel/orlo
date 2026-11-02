@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -50,11 +50,12 @@
 <!-- ============ PARTIE ============ -->
 <section id="game" class="screen">
   <div class="col gamecol">
-    <div class="gbar">
+    <div class="topbar">
       <button class="icon" id="gHome" aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="strip" id="cardAI"></div>
+      <span class="tb-title">Orlo</span>
       <button class="icon" id="gSettings" aria-label="Réglages et règles"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
     </div>
+    <div class="strip" id="cardAI"></div>
 
     <div class="boardwrap" id="gameWrap">
       <div class="boardbox" id="gameBox"><canvas role="img" aria-label="Plateau"></canvas></div>
@@ -65,7 +66,7 @@
         <p class="end-line" id="endLine"></p>
         <div class="end-btns">
           <button class="btn primary" id="eAgain">Rejouer</button>
-          <button class="btn ghost" id="eView">Plateau</button>
+          <button class="btn ghost" id="eAna">Analyser</button>
         </div>
       </div>
     </div>
@@ -77,6 +78,30 @@
       <button class="redbtn" id="modeRed" aria-pressed="false" aria-label="Poser une pierre rouge"><i class="st c3"></i><span id="redLeft">4</span></button>
       <button class="icon" id="undo" aria-label="Annuler le dernier coup"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
     </div>
+  </div>
+</section>
+
+<!-- ============ ANALYSE ============ -->
+<section id="ana" class="screen">
+  <div class="col anacol">
+    <div class="topbar">
+      <button class="icon" id="aBack" aria-label="Retour"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <span class="tb-title">Analyse</span>
+      <span class="icon" aria-hidden="true"></span>
+    </div>
+    <div class="ana-prog" id="aProg"><span id="aProgTxt">Analyse en cours…</span><i><b id="aProgBar"></b></i></div>
+    <div class="ana-sum" id="aSum"></div>
+    <canvas class="ana-graph" id="aGraph" aria-label="Courbe d'avantage"></canvas>
+    <div class="boardwrap" id="anaWrap"><div class="boardbox" id="anaBox"><canvas role="img" aria-label="Plateau d'analyse"></canvas></div></div>
+    <div class="ana-card" id="aCard"></div>
+    <div class="ana-ctrl">
+      <button class="icon" id="aFirst" aria-label="Début"><svg class="ic" viewBox="0 0 24 24"><path d="M6 5v14M18 5l-8 7 8 7"/></svg></button>
+      <button class="icon" id="aPrev" aria-label="Coup précédent"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="btn key" id="aKey">Moment clé ›</button>
+      <button class="icon" id="aNext" aria-label="Coup suivant"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="icon" id="aLast" aria-label="Fin"><svg class="ic" viewBox="0 0 24 24"><path d="M18 5v14M6 5l8 7-8 7"/></svg></button>
+    </div>
+    <div class="ana-moves" id="aMoves"></div>
   </div>
 </section>
 
@@ -141,8 +166,8 @@
   </div>
 </div>
 
-<script src="engine.js?v=7"></script>
-<script src="render.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="engine.js?v=8"></script>
+<script src="render.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
