@@ -87,6 +87,12 @@ function search(s,opts){
       bestM=curBest.m;bestV=alpha;depthDone=depth;
       if(Math.abs(alpha)>WIN/2)break;}
   }catch(e){if(e!==STOP)throw e;}
+  /* niveaux faibles : erreur volontaire (opts.err = probabilité), parmi les opts.topk meilleurs coups,
+     sans dépasser opts.maxLoss de perte estimée si fourni */
+  if(opts.err&&Math.random()<opts.err&&root.length>1){
+    var lim=opts.maxLoss==null?Infinity:opts.maxLoss;
+    var cand=root.slice(0,opts.topk||3).filter(function(r){return r.m!==bestM&&bestV-r.v<=lim;});
+    if(cand.length){var pk=cand[Math.random()*cand.length|0];bestM=pk.m;bestV=pk.v;}}
   return{move:bestM,score:bestV,depth:depthDone,nodes:nodes};}
 
 /* Analyse d'un coup joué, à profondeur fixe (pas de limite de temps, sauf filet opts.ms) :

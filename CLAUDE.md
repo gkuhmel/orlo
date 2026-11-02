@@ -22,7 +22,7 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 
 ## Version et cache
 
-- `VERSION` dans app.js (affichée en bas de l'accueil, « v8 ») et `?v=` sur les scripts et la feuille de style dans index.html : **les incrémenter ensemble à chaque mise en ligne**, pour que Safari ne garde pas d'anciens fichiers.
+- `VERSION` dans app.js (affichée en bas de l'accueil, « v9 ») et `?v=` sur les scripts et la feuille de style dans index.html : **les incrémenter ensemble à chaque mise en ligne**, pour que Safari ne garde pas d'anciens fichiers.
 - `_headers` (Cloudflare) : `Cache-Control: no-cache` sur tout le site.
 
 ## Analyse de partie (écran « Analyse », app.js)
@@ -30,7 +30,9 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Lancée depuis la fin de partie (« Analyser »). Chaque position est analysée dans un Web Worker dédié (`type: 'analyze'`), profondeur 4, avec barre de progression ; l'écran se remplit au fur et à mesure.
 - Perte d'un coup = meilleur score − score du coup joué (scores plafonnés à ±6000). Classes : Meilleur ≤ 15 · Bon < 120 · Imprécision < 400 · Erreur < 1500 · Gaffe au-delà (1000 = une pierre). Précision d'un joueur = moyenne de 100·e^(−perte/900).
 - Écran : précision et décompte ?! ? ?? par joueur, courbe d'avantage de ton point de vue (touchable), plateau, carte du coup (classe, explication, avantage avant → après en pierres, « Montrer le meilleur coup »), navigation, « Moment clé › » (d'abord tes erreurs, puis erreurs adverses et sorties), liste des coups notés A1… (colonnes A→, rangées comptées depuis le bas).
-- Explications générées : réponse adverse qui sort tes pierres, pierres propres sorties, meilleur coup et ce qu'il sortait.
+- Explications générées : coup qui perd de force / victoire forcée manquée, réponse adverse qui sort tes pierres, pierres propres sorties, meilleur coup.
+- « Pourquoi » (`whyGood`, sur le fil principal, mis en cache) : sortie immédiate, menace parée (dont « la rouge bloque la poussée », avec la case menacée), aucune sortie laissée contrairement au coup joué, sortie préparée ; à défaut, effet sur le bord (pierres éloignées du bord, pierres adverses repoussées vers le bord). Plus une « suite probable » de 3 coups (recherche prof. 3). Affiché pour le meilleur coup en cas d'erreur, et pour le coup joué s'il est bon.
+- L'écran d'analyse tient dans la hauteur (100dvh, pas de défilement de page) ; la carte du coup défile seule si le texte est long ; la liste des coups n'apparaît que sur les écrans hauts (≥ 780 px).
 
 ## Moteur (engine.js)
 
@@ -40,7 +42,10 @@ Jeu de pierres 1v1 contre IA, web mobile en priorité (iPhone Safari). Prototype
 - Poussée : pour chaque direction, la file contiguë de pierres est décalée d'un cran ; la dernière sort si elle est au bord ; une rouge dans la file bloque toute la file.
 - IA : negamax alpha-beta, approfondissement itératif borné en temps (`{ms, maxDepth}`), tri des coups par évaluation statique.
 - Évaluation : écart de pierres sorties ×1000, rouges restantes ×30, position (bord pénalisé, centre valorisé, table `PV` par distance au bord).
-- Niveaux UI : Apprenti 0,4 s prof. 2 ; Compagnon 1,5 s ; Maître 4 s.
+- `search` accepte des erreurs volontaires pour les niveaux faibles : `err` (probabilité), `topk` (parmi les k meilleurs coups de la racine), `maxLoss` (perte estimée maximale tolérée).
+- Six niveaux (`LEVELS` dans app.js, clés `l1`…`l6`, réglage en chiffres 1–6 avec nom et description) :
+  Novice prof. 1, err 40 % top 8 · Apprenti prof. 1, err 15 % top 4 · Aspirant prof. 2, err 12 % top 3 · Compagnon prof. 4 (0,7 s) · Expert 1,5 s (ancien Compagnon) · Maître 4 s. Défaut : Aspirant. Anciens réglages migrés (easy → Aspirant, mid → Expert, hard → Maître).
+  Échelle vérifiée (7×7, 4 rouges, couleurs alternées, 16 parties par paire) : Apprenti–Novice 15/16, Aspirant–Apprenti 14/16, Compagnon–Aspirant 15/16, Expert (0,7 s en simulation)–Compagnon 9/16. Attention : la profondeur 3 joue mal (Compagnon prof. 3 ne battait l'Aspirant que 6/12).
 - `analyze(state, played, {depth})` : meilleur coup et sa valeur + valeur exacte du coup joué au même horizon (fenêtre pleine), pour l'analyse de partie. Profondeur 4 : ~2–3 s pour une partie sur ordinateur, plus sur iPhone.
 
 ## Décisions de design (à respecter)

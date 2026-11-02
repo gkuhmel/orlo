@@ -6,15 +6,25 @@ var RM=matchMedia('(prefers-reduced-motion: reduce)');
 var HOVER=matchMedia('(hover:hover) and (pointer:fine)');
 /* Appareil tactile (iPhone, iPad sans souris…) : toujours deux touchers, quel que soit le pointerType annoncé. */
 function touchMode(ev){return !HOVER.matches||ev.pointerType==='touch'||ev.pointerType==='pen';}
-var VERSION='8';
-var LEVELS={easy:{ms:400,maxDepth:2,name:'Apprenti',the:'L’Apprenti'},mid:{ms:1500,maxDepth:12,name:'Compagnon',the:'Le Compagnon'},hard:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître'}};
+var VERSION='9';
+/* six niveaux : les quatre premiers font des erreurs volontaires ou regardent peu loin (échelle vérifiée en simulation) */
+var LEVELS={
+  l1:{ms:250,maxDepth:1,err:.4,topk:8,name:'Novice',the:'Le Novice',d:'Regarde un coup, se trompe souvent.'},
+  l2:{ms:250,maxDepth:1,err:.15,topk:4,maxLoss:1500,name:'Apprenti',the:'L’Apprenti',d:'Regarde un coup, se trompe parfois.'},
+  l3:{ms:400,maxDepth:2,err:.12,topk:3,maxLoss:900,name:'Aspirant',the:'L’Aspirant',d:'Voit ta réponse, petites erreurs.'},
+  l4:{ms:700,maxDepth:4,name:'Compagnon',the:'Le Compagnon',d:'Calcule 4 coups, sans erreur volontaire.'},
+  l5:{ms:1500,maxDepth:12,name:'Expert',the:'L’Expert',d:'Réfléchit 1,5 s à chaque coup.'},
+  l6:{ms:4000,maxDepth:20,name:'Maître',the:'Le Maître',d:'Réfléchit 4 s à chaque coup.'}};
+var LEVEL_KEYS=['l1','l2','l3','l4','l5','l6'];
 function opp(){return LEVELS[cfg.level].the;}
 /* % de victoires de Noir en simulation IA contre IA (voir CLAUDE.md) */
 var BAL={'6:3':60,'6:4':100,'7:3':12,'7:4':50,'8:3':0,'8:4':4};
 var DX=[1,-1,0,0],DY=[0,0,1,-1];
 var store={get:function(k,d){try{var v=localStorage.getItem('orlo.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
   set:function(k,v){try{localStorage.setItem('orlo.'+k,JSON.stringify(v));}catch(e){}}};
-var cfg=Object.assign({level:'mid',color:2,size:7,reds:4,theme:'sable'},store.get('settings',{}));
+var cfg=Object.assign({level:'l3',color:2,size:7,reds:4,theme:'sable'},store.get('settings',{}));
+/* anciens réglages : easy = prof. 2 → Aspirant, mid = ancien Compagnon → Expert, hard → Maître */
+cfg.level={easy:'l3',mid:'l5',hard:'l6'}[cfg.level]||(LEVELS[cfg.level]?cfg.level:'l3');
 if(!OrloArt.THEMES[cfg.theme])cfg.theme='sable';
 OrloArt.setTheme(cfg.theme);
 function saveCfg(){store.set('settings',cfg);}
@@ -244,11 +254,11 @@ function aiTurn(){
   G.thinking=true;renderHUD();say(opp()+' réfléchit…');hint('');
   var opts=LEVELS[cfg.level],gid=G.gid,s=G.cur;G.aiT0=performance.now();
   var st={b:Array.from(s.b),toPlay:s.toPlay,reds:s.reds.slice(),lost:s.lost.slice(),moves:s.moves,winner:s.winner,last:s.last};
-  if(worker)worker.postMessage({state:st,opts:{ms:opts.ms,maxDepth:opts.maxDepth},gid:gid,n:G.N});
+  if(worker)worker.postMessage({state:st,opts:{ms:opts.ms,maxDepth:opts.maxDepth,err:opts.err,topk:opts.topk,maxLoss:opts.maxLoss},gid:gid,n:G.N});
   else aiFallback();
 }
 function aiFallback(){var gid=G.gid,opts=LEVELS[cfg.level];
-  setTimeout(function(){if(gid!==G.gid)return;eng();var r=E.search(E.clone(G.cur),{ms:Math.min(opts.ms,1200),maxDepth:opts.maxDepth});r.gid=gid;onAI(r);},40);}
+  setTimeout(function(){if(gid!==G.gid)return;eng();var r=E.search(E.clone(G.cur),{ms:Math.min(opts.ms,1200),maxDepth:opts.maxDepth,err:opts.err,topk:opts.topk,maxLoss:opts.maxLoss});r.gid=gid;onAI(r);},40);}
 function onAI(r){
   if(!G.thinking||r.gid!==G.gid)return;
   var wait=Math.max(0,550-(performance.now()-G.aiT0));
@@ -315,7 +325,7 @@ var A=null,anaWorker=null,anaGid=0;
 function capS(v){return Math.max(-6000,Math.min(6000,v));}
 function classify(L){return L<=15?'best':L<120?'good':L<400?'inacc':L<1500?'mistake':'blunder';}
 function noteOf(N,m){var p=m>=E.REDOFF?m-E.REDOFF:m;return 'ABCDEFGHI'[p%N]+(N-((p/N)|0));}
-function stoneTxt(v){var x=Math.round(v/100)/10;return (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1).replace('.',',');}
+function stoneTxt(v){if(v>=5000)return 'gagnant';if(v<=-5000)return 'perdant';var x=Math.round(v/100)/10;return (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1).replace('.',',');}
 function ser(st){return{b:Array.from(st.b),toPlay:st.toPlay,reds:st.reds.slice(),lost:st.lost.slice(),moves:st.moves,winner:st.winner,last:st.last};}
 function outs(st,m,color){E.configure(A.N);var t=E.clone(st),tr=[];if(!E.play(t,m,tr))return 0;
   return tr.filter(function(x){return x[1]<0&&st.b[x[0]]===color;}).length;}
@@ -347,24 +357,61 @@ function anaMove(i){
     before:sgn*capS(r.bestScore),after:sgn*capS(r.playedScore),
     acc:100*Math.exp(-L/900),gain:outs(st,m,3-mover),selfOut:outs(st,m,mover)};
 }
+/* meilleure sortie immédiate possible pour le joueur au trait dans st, contre la couleur victim */
+function maxThreat(st,victim){
+  if(st.winner)return{k:0,m:null};
+  var best={k:0,m:null},NN=A.N*A.N;
+  for(var p=0;p<NN;p++)if(!st.b[p]){var k=outs(st,p,victim);if(k>best.k)best={k:k,m:p};}
+  return best;}
+function asTurn(st,c){E.configure(A.N);var t=E.clone(st);t.toPlay=c;return t;}
+function after(st,m){E.configure(A.N);var t=E.clone(st);E.play(t,m);return t;}
+function edgeCount(b,color){var N=A.N,n=0;for(var p=0;p<N*N;p++){var x=p%N,y=(p/N)|0;if(b[p]===color&&(x===0||y===0||x===N-1||y===N-1))n++;}return n;}
+/* pourquoi le coup m (joué depuis P[i]) est bon : phrases courtes, du point de vue du joueur m */
+function whyGood(i,m){
+  A.why=A.why||{};var key=i+':'+m;if(A.why[key])return A.why[key];
+  var S0=A.P[i],mv=S0.toPlay,o=3-mv,me=mv===A.HC,N=A.N;
+  var tes=me?'tes':'ses',tu=me?'tu':'il',adv=me?'l’adversaire':'tu',out=[];
+  var Sb=after(S0,m),g=outs(S0,m,o);
+  if(g)out.push('Il sort tout de suite '+plural(g,'pierre')+' adverse'+(g>1?'s':'')+'.');
+  var before=maxThreat(asTurn(S0,o),mv),afterB=maxThreat(Sb,mv);
+  var threat=before.k>afterB.k;
+  if(threat)out.push((m>=E.REDOFF?'La rouge bloque la poussée : ':'Il pare la menace : ')+adv+' pouvai'+(me?'t':'s')+' sortir '+(before.k>1?before.k+' de '+tes+' pierres':'une de '+tes+' pierres')+' en '+noteOf(N,before.m)+'.');
+  else if(!afterB.k&&i+1<A.P.length&&A.P[i+1].last!==m){var tp=maxThreat(A.P[i+1],mv);
+    if(tp.k)out.push('Il ne laisse aucune sortie à '+(me?'l’adversaire':'toi')+', alors que le coup joué en permettait '+(tp.k>1?tp.k:'une')+'.');}
+  if(!g&&!Sb.winner){var th=maxThreat(asTurn(Sb,mv),o);if(th.k&&!afterB.k)out.push('Il prépare une sortie : '+noteOf(N,th.m)+' menace '+plural(th.k,'pierre')+'.');}
+  if(!out.length){
+    var played=i+1<A.P.length?A.P[i+1]:null;
+    var myEdge=edgeCount(Sb.b,mv),opEdge=edgeCount(Sb.b,o);
+    if(played&&played.last!==m&&myEdge<edgeCount(played.b,mv))out.push('Il garde '+tes+' pierres loin du bord.');
+    else if(played&&played.last!==m&&opEdge>edgeCount(played.b,o))out.push('Il repousse des pierres adverses vers le bord.');
+    else out.push('Il renforce le centre sans rien exposer au bord.');}
+  /* suite probable sur 3 coups */
+  var line=[],cur=Sb;
+  for(var k=0;k<3&&!cur.winner;k++){E.configure(N);var r=E.search(E.clone(cur),{ms:150,maxDepth:3}),c=cur.toPlay,ko=outs(cur,r.move,3-c);
+    line.push(noteOf(N,r.move)+(r.move>=E.REDOFF?' (rouge)':'')+(ko?' (sort '+ko+')':''));cur=after(cur,r.move);}
+  var res={txt:out.slice(0,2).join(' '),line:line.join(' · '),threat:threat};A.why[key]=res;return res;}
+
 function anaExplain(x){
   var who=x.me?'Tu':'Il',poss=x.me?'tes':'ses',N=A.N,t=[];
   if(x.cls==='best'||x.cls==='good'){
-    if(x.gain)t.push((x.me?'Tu sors ':'Il sort ')+plural(x.gain,'pierre')+'.');
-    t.push(x.cls==='best'?'C’était le meilleur coup.':'Coup solide, proche du meilleur.');
+        t.push(x.cls==='best'?'Le meilleur coup.':'Coup solide, proche du meilleur.');
   }else{
+    var rr=A.res[x.i];
+    if(rr&&capS(rr.playedScore)<=-5000&&capS(rr.bestScore)>-5000){t.push('Ce coup perd de force : '+(x.me?'l’adversaire':'tu')+' gagne'+(x.me?'':'s')+' quoi qu’il arrive.');}
+    else if(rr&&capS(rr.bestScore)>=5000&&capS(rr.playedScore)<5000){t.push((x.me?'Tu avais':'Il avait')+' une victoire forcée ici, et '+(x.me?'tu l’as laissée':'il l’a laissée')+' passer.');}
     var nx=A.res[x.i+1];
-    if(nx&&nx.best!=null&&!A.P[x.i+1].winner){var k=outs(A.P[x.i+1],nx.best,x.mover);
+    var wb=x.best!=null&&x.best!==x.m?whyGood(x.i,x.best):null;
+    if(nx&&nx.best!=null&&!A.P[x.i+1].winner&&!(wb&&wb.threat)){var k=outs(A.P[x.i+1],nx.best,x.mover);
       if(k)t.push('Ce coup permet à l’adversaire de sortir '+(k>1?k+' de '+poss+' pierres':'une de '+poss+' pierres')+' (réponse '+noteOf(N,nx.best)+').');}
     if(x.selfOut)t.push((x.me?'Tu sors ':'Il sort ')+(x.selfOut>1?x.selfOut+' de '+poss+' propres pierres':'une de '+poss+' propres pierres')+'.');
     if(x.best!=null&&x.best!==x.m){var g=outs(A.P[x.i],x.best,3-x.mover);
-      t.push('Meilleur : '+noteOf(N,x.best)+(x.best>=E.REDOFF?' (rouge)':'')+(g?', qui sortait '+plural(g,'pierre'):'')+'.');}
+      t.push('Meilleur : '+noteOf(N,x.best)+(x.best>=E.REDOFF?' (rouge)':'')+'.');}
   }
   return t.join(' ');
 }
 function anaShow(k,animate){
   if(!A)return;k=Math.max(0,Math.min(A.P.length-1,k));
-  var prev=A.k;A.k=k;A.showBest=false;ab.setPreview(null);
+  var prev=A.k;A.k=k;A.showBest=false;ab.setPreview(null);$('aCard').scrollTop=0;
   if(animate&&k===prev+1){var st=A.P[prev],m=A.P[k].last,t=E.clone(st),tr=[];E.configure(A.N);E.play(t,m,tr);
     ab.reset(st.b,st.last<0?-1:st.last%E.REDOFF);var p=m>=E.REDOFF?m-E.REDOFF:m;ab.playMove(tr,p,t.b[p]);}
   else{var l=A.P[k].last;ab.reset(A.P[k].b,k&&l>=0?(l>=E.REDOFF?l-E.REDOFF:l):-1);}
@@ -399,7 +446,8 @@ function anaRender(){
   else{var x=moves[k-1],m=A.P[k].last,isRed=m>=E.REDOFF;
     card='<p class="ana-h"><span class="mv">'+k+'.</span><i class="st c'+(isRed?3:A.P[k-1].toPlay)+'"></i>'+(A.P[k-1].toPlay===A.HC?'Toi':A.who)+' · '+noteOf(A.N,m)+
       (x?'<span class="badge-cls" style="--c:'+CLS[x.cls].c+'">'+CLS[x.cls].s+' '+CLS[x.cls].t+'</span>':'<span class="badge-cls wait">analyse…</span>')+'</p>';
-    if(x){card+='<p class="ana-t">'+fr(anaExplain(x))+'</p><p class="ana-e">Ton avantage (en pierres) : '+stoneTxt(x.before)+' → '+stoneTxt(x.after)+'</p>';
+    var why=null;if(x){why=CLS_ORDER.indexOf(x.cls)>=2?(x.best!=null?whyGood(x.i,x.best):null):whyGood(x.i,x.m);}
+    if(x){card+='<p class="ana-t">'+fr(anaExplain(x))+(why?(CLS_ORDER.indexOf(x.cls)>=2?' <span class="why">Pourquoi\u202f: </span>':' <span class="why">Pourquoi c’est bon\u202f: </span>')+fr(why.txt):'')+'</p>'+(why&&why.line?'<p class="ana-e">Suite probable : '+why.line+'</p>':'')+'<p class="ana-e">Ton avantage (en pierres) : '+stoneTxt(x.before)+' → '+stoneTxt(x.after)+'</p>';
       if(x.best!=null&&x.best!==x.m&&CLS_ORDER.indexOf(x.cls)>=2)card+='<button class="linkbtn" id="aBest">'+(A.showBest?'Revenir au coup joué':'Montrer le meilleur coup')+'</button>';}}
   if(k===n&&A.P[n].winner){var w=A.P[n].winner;card+='<p class="ana-t end">'+(w===A.HC?'Victoire.':w===3?'Égalité.':'Défaite.')+'</p>';}
   $('aCard').innerHTML=card;if($('aBest'))$('aBest').onclick=anaToggleBest;
@@ -454,7 +502,8 @@ function opts(id,list,key,num){
     b.onclick=function(){cfg[key]=num?+o[0]:o[0];saveCfg();if(key==='theme')applyTheme();renderSettings();if(current==='home')updateHome();if(current==='game')renderHUD();};
     box.appendChild(b);});}
 function renderSettings(){
-  opts('sLevel',[['easy','Apprenti'],['mid','Compagnon'],['hard','Maître']],'level');
+  opts('sLevel',LEVEL_KEYS.map(function(k,i){return[k,String(i+1)];}),'level');
+  $('sLevelTxt').innerHTML='<b>'+LEVELS[cfg.level].name+'</b> · '+LEVELS[cfg.level].d;
   opts('sColor',[[2,'<i class="st c2"></i>Blanc <small>· 2e</small>'],[1,'<i class="st c1"></i>Noir <small>· 1er</small>']],'color',true);
   opts('sSize',[5,6,7,8,9].map(function(n){return[n,n+'×'+n];}),'size',true);
   opts('sReds',[0,1,2,3,4,5,6,7,8].map(function(n){return[n,String(n)];}),'reds',true);
